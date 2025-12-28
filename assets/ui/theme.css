@@ -1,0 +1,21 @@
+
+:root{
+  --bg:#0b1a2a;
+  --panel:#10263d;
+  --accent:#7fd4ff;
+  --gold:#e6c878;
+  --text:#ffffff;
+}
+.ui-panel{
+  background:linear-gradient(#10263d,#0b1a2a);
+  border:2px solid var(--accent);
+  border-radius:10px;
+  color:var(--text);
+}
+.button{
+  padding:8px 14px;
+  border-radius:8px;
+  background:var(--accent);
+  color:#000;
+  font-weight:bold;
+}
