@@ -2,22 +2,22 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Guardians Remnant – Step 6B</title>
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Guardians Remnant — Step 6C</title>
 <style>
-html,body{margin:0;background:#07121c;color:#9fe3ff;font-family:system-ui}
-#hud{position:fixed;top:10px;left:10px;padding:10px;border-radius:10px;
-background:rgba(0,0,0,.4);border:1px solid rgba(120,200,255,.35)}
-canvas{display:block}
+html,body{margin:0;padding:0;background:#050b14;color:#9fdcff;font-family:system-ui;}
+canvas{display:block;}
+#label{
+ position:fixed;top:10px;left:10px;
+ background:rgba(0,0,0,.45);
+ border:1px solid rgba(127,212,255,.4);
+ padding:8px 12px;border-radius:8px;
+}
 </style>
 </head>
 <body>
-<div id="hud">Step 6B: Player + Room Camera</div>
+<div id="label">Step 6C: Runtime Map + Player Spawn</div>
 <canvas id="game"></canvas>
 
-<script type="module">
-import { startRuntime } from "./engine/runtime/runtime.js";
-startRuntime();
-</script>
+<script type="module" src="./runtime.js"></script>
 </body>
 </html>
