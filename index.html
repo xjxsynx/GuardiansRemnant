@@ -45,16 +45,19 @@
 
       log("Engine modules loaded ✅");
 
-      // Optional: if you have a main entry, use it
-      // const { start } = await import("./engine/main.js");
-      // start({ canvas });
+      const { Tilesets } = await import("./engine/map/tilesets.js");
 
-    } catch (err) {
-      console.error(err);
-      log("Module load failed ❌ (check engine/ paths). Open console for details.");
-      ctx.fillStyle = "#ff6b6b";
-      ctx.fillText("Module load failed (see console)", 20, 90);
-    }
-  </script>
-</body>
-</html>
+      // load the first tileset image
+      const img = new Image();
+      img.src = Tilesets.debug.image; // uses whatever you set in tilesets.js
+
+      img.onload = () => {
+        // draw it big so you can see it clearly
+        ctx.imageSmoothingEnabled = false;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 20, 100, 64, 64);
+        log("Tile drawn ✅");
+      };
+
+      img.onerror = () => {
+        log("Tile failed to load ❌ (check Tilesets.debug.image path)");
