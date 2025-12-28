@@ -2,46 +2,25 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <title>Guardians Remnant – Creator Engine</title>
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Guardians Remnant</title>
   <style>
     html, body {
       margin: 0;
       padding: 0;
       background: #0b1a2a;
-      color: white;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont;
-      overflow: hidden;
-    }
-    canvas {
-      display: block;
-      image-rendering: pixelated;
+      color: #7fd4ff;
+      font-family: system-ui, -apple-system;
     }
   </style>
 </head>
 <body>
 
-<canvas id="game"></canvas>
+<h1 style="padding:20px;">Creator Engine Online ✅</h1>
+<p style="padding:20px;">GitHub Pages + Safari confirmed working.</p>
 
-<script type="module">
-  import "./engine/core/loop.js";
-  import "./engine/map/tilesets.js";
-
-  const canvas = document.getElementById("game");
-  const ctx = canvas.getContext("2d");
-
-  function resize() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-  }
-
-  window.addEventListener("resize", resize);
-  resize();
-
-  ctx.fillStyle = "#7fd4ff";
-  ctx.font = "20px system-ui";
-  ctx.fillText("Creator Engine Loaded", 20, 40);
+<script>
+  console.log("GitHub Pages test OK");
 </script>
 
 </body>
