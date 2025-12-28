@@ -2,136 +2,66 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<title>Guardians Remnant – Creator Engine (Camera)</title>
+<title>Guardians Remnant – Creator Engine</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <style>
-  html, body {
-    margin: 0;
-    padding: 0;
-    background: #08131f;
-    overflow: hidden;
-  }
-  #log {
-    position: fixed;
-    left: 10px;
-    top: 10px;
-    z-index: 10;
-    color: #7fd4ff;
-    font: 14px system-ui, -apple-system, BlinkMacSystemFont;
-    background: rgba(0,0,0,0.35);
-    padding: 10px;
-    border-radius: 6px;
-    border: 1px solid rgba(127,212,255,0.35);
-  }
-  canvas { display: block; }
+html,body{margin:0;padding:0;background:#0b1320;color:#7fd4ff;font-family:system-ui;}
+#log{position:fixed;left:10px;top:10px;background:rgba(0,0,0,.35);padding:8px;border:1px solid rgba(127,212,255,.4);border-radius:6px}
+#ui{position:fixed;right:10px;top:10px;display:flex;gap:6px}
+button{background:#12233f;color:#7fd4ff;border:1px solid #2b5ea8;padding:6px 10px;border-radius:6px}
+canvas{display:block}
 </style>
 </head>
 <body>
-
 <div id="log">Booting…</div>
+<div id="ui">
+<button id="clear">Clear</button>
+<button id="export">Export</button>
+</div>
 <canvas id="game"></canvas>
 
 <script type="module">
-const logEl = document.getElementById("log");
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
+const log = msg => document.getElementById("log").textContent = msg;
 
 const TILE = 32;
-let frame = 0;
+let map = JSON.parse(localStorage.getItem("gr_map")||"[]");
 
-// --- Camera (world space) ---
-const camera = {
-  x: 0,
-  y: 0,
-  speed: 4
+function resize(){
+ canvas.width = innerWidth;
+ canvas.height = innerHeight;
+}
+addEventListener("resize",resize); resize();
+
+canvas.addEventListener("click",e=>{
+ const x=Math.floor(e.offsetX/TILE);
+ const y=Math.floor(e.offsetY/TILE);
+ map.push({x,y});
+ localStorage.setItem("gr_map",JSON.stringify(map));
+});
+
+document.getElementById("clear").onclick=()=>{
+ map=[]; localStorage.removeItem("gr_map");
 };
 
-function log(msg){ logEl.textContent = msg; }
+document.getElementById("export").onclick=()=>{
+ navigator.clipboard.writeText(JSON.stringify(map,null,2));
+ alert("Map JSON copied");
+};
 
-function resize() {
-  const dpr = window.devicePixelRatio || 1;
-  canvas.width = Math.floor(window.innerWidth * dpr);
-  canvas.height = Math.floor(window.innerHeight * dpr);
-  canvas.style.width = window.innerWidth + "px";
-  canvas.style.height = window.innerHeight + "px";
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+let ticks=0;
+function loop(){
+ ctx.clearRect(0,0,canvas.width,canvas.height);
+ ctx.strokeStyle="rgba(127,212,255,.25)";
+ for(let x=0;x<canvas.width;x+=TILE){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,canvas.height);ctx.stroke();}
+ for(let y=0;y<canvas.height;y+=TILE){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(canvas.width,y);ctx.stroke();}
+ ctx.fillStyle="#3fb950";
+ for(const t of map){ctx.fillRect(t.x*TILE,t.y*TILE,TILE,TILE);}
+ ticks++; log("Saved tiles: "+map.length+" | Loop: "+ticks);
+ requestAnimationFrame(loop);
 }
-window.addEventListener("resize", resize);
-resize();
-
-// --- Input (touch drag to pan camera) ---
-let lastTouch = null;
-canvas.addEventListener("touchstart", e => {
-  lastTouch = e.touches[0];
-});
-canvas.addEventListener("touchmove", e => {
-  if (!lastTouch) return;
-  const t = e.touches[0];
-  camera.x -= (t.clientX - lastTouch.clientX);
-  camera.y -= (t.clientY - lastTouch.clientY);
-  lastTouch = t;
-});
-canvas.addEventListener("touchend", () => lastTouch = null);
-
-// --- Drawing ---
-function clear() {
-  ctx.fillStyle = "#08131f";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-}
-
-function drawGrid(size) {
-  ctx.save();
-  ctx.strokeStyle = "rgba(0,255,255,0.45)";
-  ctx.lineWidth = 1;
-
-  const startX = Math.floor(camera.x / size) * size;
-  const startY = Math.floor(camera.y / size) * size;
-
-  const cols = Math.ceil(window.innerWidth / size) + 2;
-  const rows = Math.ceil(window.innerHeight / size) + 2;
-
-  for (let x = 0; x < cols; x++) {
-    const wx = startX + x * size;
-    const sx = wx - camera.x;
-    ctx.beginPath();
-    ctx.moveTo(sx + 0.5, 0);
-    ctx.lineTo(sx + 0.5, window.innerHeight);
-    ctx.stroke();
-  }
-
-  for (let y = 0; y < rows; y++) {
-    const wy = startY + y * size;
-    const sy = wy - camera.y;
-    ctx.beginPath();
-    ctx.moveTo(0, sy + 0.5);
-    ctx.lineTo(window.innerWidth, sy + 0.5);
-    ctx.stroke();
-  }
-
-  ctx.restore();
-}
-
-function drawWorldOrigin() {
-  ctx.save();
-  ctx.fillStyle = "#2ecc71";
-  ctx.fillRect(-camera.x, -camera.y, TILE, TILE);
-  ctx.restore();
-}
-
-function loop() {
-  frame++;
-  clear();
-  drawGrid(TILE);
-  drawWorldOrigin();
-
-  log("Camera active ✅  |  Loop: " + frame + 
-      "\nWorld (0,0) shown as green tile" +
-      "\nDrag screen to pan");
-  requestAnimationFrame(loop);
-}
-
 loop();
 </script>
-
 </body>
 </html>
