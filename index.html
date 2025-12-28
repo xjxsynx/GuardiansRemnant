@@ -1,133 +1,80 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Guardians Remnant – Step 5C</title>
+<title>Guardians Remnant – Step 6A Runtime</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <style>
-body {
-  margin: 0;
-  background: #08131f;
-  color: #7fd4ff;
-  font-family: system-ui, sans-serif;
-}
-#ui {
-  position: fixed;
-  top: 10px;
-  left: 10px;
-  background: rgba(0,0,0,0.4);
-  padding: 12px;
-  border-radius: 10px;
-  border: 1px solid rgba(127,212,255,0.35);
-}
-button {
-  margin: 4px 2px;
-  padding: 6px 10px;
-  border-radius: 6px;
-  border: 1px solid rgba(127,212,255,0.35);
-  background: rgba(0,0,0,0.4);
-  color: #7fd4ff;
-}
-button.active {
-  background: rgba(127,212,255,0.25);
-}
-canvas {
-  display: block;
+html,body{margin:0;padding:0;background:#061018;color:#7fd4ff;font-family:system-ui;}
+canvas{display:block;}
+#hud{
+ position:fixed;left:10px;top:10px;
+ background:rgba(0,0,0,.35);
+ border:1px solid rgba(127,212,255,.35);
+ padding:8px 12px;border-radius:10px;
 }
 </style>
 </head>
 <body>
-
-<div id="ui">
-  <div><b>Step 5C: Entity Export + Layers</b></div>
-  <button id="terrainBtn" class="active">Terrain</button>
-  <button id="entityBtn">Entities</button>
-  <button id="exportEntitiesBtn">Export Entities</button>
-  <div id="status"></div>
-</div>
-
+<div id="hud">Step 6A: Runtime Loader</div>
 <canvas id="game"></canvas>
 
 <script type="module">
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
-const dpr = window.devicePixelRatio || 1;
-const tileSize = 32;
-
-let mode = "terrain";
-let entities = [];
+const hud = document.getElementById("hud");
 
 function resize(){
-  canvas.width = window.innerWidth * dpr;
-  canvas.height = window.innerHeight * dpr;
-  canvas.style.width = window.innerWidth + "px";
-  canvas.style.height = window.innerHeight + "px";
-  ctx.setTransform(dpr,0,0,dpr,0,0);
+  canvas.width = innerWidth * devicePixelRatio;
+  canvas.height = innerHeight * devicePixelRatio;
+  canvas.style.width = innerWidth+"px";
+  canvas.style.height = innerHeight+"px";
+  ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
 }
-window.addEventListener("resize", resize);
-resize();
+addEventListener("resize",resize); resize();
 
-document.getElementById("terrainBtn").onclick = () => setMode("terrain");
-document.getElementById("entityBtn").onclick = () => setMode("entity");
-document.getElementById("exportEntitiesBtn").onclick = exportEntities;
+const tileSize = 32;
+let camera = {x:0,y:0};
 
-function setMode(m){
-  mode = m;
-  document.querySelectorAll("button").forEach(b=>b.classList.remove("active"));
-  if(m==="terrain") terrainBtn.classList.add("active");
-  if(m==="entity") entityBtn.classList.add("active");
-}
-
-canvas.addEventListener("click", e => {
-  if(mode !== "entity") return;
-  const x = Math.floor(e.clientX / tileSize);
-  const y = Math.floor(e.clientY / tileSize);
-  entities.push({
-    id: "entity_" + Date.now(),
-    x, y,
-    role: "npc",
-    mode: "static"
-  });
-});
-
-function exportEntities(){
-  const data = {
-    format: "gr.entities.v1",
-    map: "Overworld_Start",
-    exportedAt: new Date().toISOString(),
-    entities
-  };
-  const blob = new Blob([JSON.stringify(data,null,2)], {type:"application/json"});
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "Overworld_Start.grentities.json";
-  a.click();
-}
+// Demo inline data (replace with fetch later)
+const mapData = {
+  width:20,height:12,tileSize:32,
+  tiles:{ "0,5":1,"1,5":1,"2,5":1,"3,5":1,"4,5":1 }
+};
+const entities = [
+ {id:"player",x:2,y:4,color:"#7fd4ff"},
+ {id:"npc",x:6,y:4,color:"#4cff9d"}
+];
 
 function drawGrid(){
-  ctx.strokeStyle = "rgba(127,212,255,0.25)";
-  for(let x=0;x<canvas.width;x+=tileSize){
-    ctx.beginPath();
-    ctx.moveTo(x,0); ctx.lineTo(x,canvas.height); ctx.stroke();
-  }
-  for(let y=0;y<canvas.height;y+=tileSize){
-    ctx.beginPath();
-    ctx.moveTo(0,y); ctx.lineTo(canvas.width,y); ctx.stroke();
-  }
+ ctx.strokeStyle="rgba(127,212,255,.15)";
+ for(let x=0;x<mapData.width;x++)
+  for(let y=0;y<mapData.height;y++)
+   ctx.strokeRect(x*tileSize-camera.x,y*tileSize-camera.y,tileSize,tileSize);
+}
+
+function drawTiles(){
+ for(const k in mapData.tiles){
+  const [x,y]=k.split(",").map(Number);
+  ctx.fillStyle="#2d7d46";
+  ctx.fillRect(x*tileSize-camera.x,y*tileSize-camera.y,tileSize,tileSize);
+ }
 }
 
 function drawEntities(){
-  ctx.fillStyle = "#4cff7f";
-  entities.forEach(e=>{
-    ctx.fillRect(e.x*tileSize, e.y*tileSize, tileSize, tileSize);
-  });
+ for(const e of entities){
+  ctx.fillStyle=e.color;
+  ctx.fillRect(e.x*tileSize-camera.x,e.y*tileSize-camera.y,tileSize,tileSize);
+ }
 }
 
 function loop(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  drawGrid();
-  drawEntities();
-  requestAnimationFrame(loop);
+ ctx.clearRect(0,0,canvas.width,canvas.height);
+ drawTiles();
+ drawEntities();
+ drawGrid();
+ requestAnimationFrame(loop);
 }
 loop();
 </script>
