@@ -1,120 +1,107 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8" />
-<title>Guardians Remnant – Step 4B Load Map</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="utf-8">
+<title>Guardians Remnant – Step 4C Animated Transitions</title>
 <style>
-html, body {
-  margin: 0;
-  padding: 0;
-  background: #0b1220;
-  color: #9fdcff;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+html,body{margin:0;background:#07131f;color:#9fdcff;font-family:system-ui}
+#ui{
+ position:fixed;top:10px;left:10px;
+ background:rgba(0,0,0,.4);
+ padding:10px;border-radius:8px;
+ border:1px solid rgba(127,212,255,.35)
 }
-#ui {
-  position: fixed;
-  top: 10px;
-  left: 10px;
-  background: rgba(0,0,0,0.4);
-  border: 1px solid rgba(120,200,255,0.4);
-  padding: 10px;
-  border-radius: 8px;
-}
-button {
-  background: #142a44;
-  color: #9fdcff;
-  border: 1px solid rgba(120,200,255,0.4);
-  border-radius: 6px;
-  padding: 6px 10px;
-  margin-right: 6px;
-}
-canvas {
-  display: block;
-}
+canvas{display:block}
 </style>
 </head>
 <body>
-
 <div id="ui">
-  <strong>Step 4B: Load .grmap.json</strong><br/><br/>
-  <input type="file" id="fileInput" accept=".json" /><br/><br/>
-  <span id="status">Waiting for file…</span>
+<b>Step 4C</b>: Animated map transitions<br>
+Tap blue tile = portal
 </div>
-
 <canvas id="game"></canvas>
 
 <script>
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
-const statusEl = document.getElementById("status");
+const canvas=document.getElementById('game');
+const ctx=canvas.getContext('2d');
+const TILE=32;
 
-const TILE_SIZE = 32;
-let mapData = null;
+let activeMap='Overworld';
+let transitioning=false;
+let fade=0;
+let fadeDir=0;
+let targetMap=null;
 
-function resize() {
-  canvas.width = window.innerWidth * devicePixelRatio;
-  canvas.height = window.innerHeight * devicePixelRatio;
-  ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+const maps={
+ Overworld:{
+  tiles:{'0,0':'g','1,0':'w'}
+ },
+ Dungeon:{
+  tiles:{'0,0':'s','1,0':'g'}
+ }
+};
+
+function resize(){
+ canvas.width=innerWidth;
+ canvas.height=innerHeight;
 }
-window.addEventListener("resize", resize);
+addEventListener('resize',resize);
 resize();
 
-function drawGrid() {
-  ctx.strokeStyle = "rgba(120,200,255,0.25)";
-  for (let x = 0; x < canvas.width; x += TILE_SIZE) {
-    ctx.beginPath();
-    ctx.moveTo(x, 0);
-    ctx.lineTo(x, canvas.height);
-    ctx.stroke();
-  }
-  for (let y = 0; y < canvas.height; y += TILE_SIZE) {
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(canvas.width, y);
-    ctx.stroke();
-  }
+function drawMap(name){
+ const m=maps[name];
+ for(const k in m.tiles){
+  const [x,y]=k.split(',').map(Number);
+  ctx.fillStyle=
+    m.tiles[k]=='g'?'#4caf50':
+    m.tiles[k]=='w'?'#4aa3ff':
+    '#888';
+  ctx.fillRect(x*TILE,y*TILE,TILE,TILE);
+ }
 }
 
-function drawMap() {
-  if (!mapData) return;
+function loop(){
+ ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  Object.entries(mapData.tiles).forEach(([key, tileId]) => {
-    const [x, y] = key.split(",").map(Number);
-    ctx.fillStyle =
-      tileId === 1 ? "#3cb371" :
-      tileId === 2 ? "#8b5a2b" :
-      tileId === 3 ? "#777" :
-      tileId === 4 ? "#3aa0ff" :
-      "#fff";
-    ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-  });
-}
+ if(!transitioning){
+  drawMap(activeMap);
+ } else {
+  drawMap(activeMap);
+  ctx.fillStyle=`rgba(0,0,0,${fade})`;
+  ctx.fillRect(0,0,canvas.width,canvas.height);
 
-function loop() {
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  drawGrid();
-  drawMap();
-  requestAnimationFrame(loop);
+  fade+=fadeDir;
+  if(fade>=1){
+    activeMap=targetMap;
+    fadeDir=-0.05;
+  }
+  if(fade<=0){
+    fade=0;
+    transitioning=false;
+  }
+ }
+
+ requestAnimationFrame(loop);
 }
 loop();
 
-document.getElementById("fileInput").addEventListener("change", (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
+canvas.addEventListener('click',e=>{
+ const tx=Math.floor(e.offsetX/TILE);
+ const ty=Math.floor(e.offsetY/TILE);
 
-  const reader = new FileReader();
-  reader.onload = () => {
-    try {
-      mapData = JSON.parse(reader.result);
-      statusEl.textContent = "Loaded map: " + mapData.name;
-    } catch (err) {
-      statusEl.textContent = "Invalid map file";
-    }
-  };
-  reader.readAsText(file);
+ if(transitioning) return;
+
+ if(activeMap==='Overworld' && tx===1 && ty===0){
+   transitioning=true;
+   targetMap='Dungeon';
+   fadeDir=0.05;
+ }
+ else if(activeMap==='Dungeon'){
+   transitioning=true;
+   targetMap='Overworld';
+   fadeDir=0.05;
+ }
 });
 </script>
-
 </body>
 </html>
