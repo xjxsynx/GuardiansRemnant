@@ -88,7 +88,23 @@
       ctx.fillStyle = "#7fd4ff";
       ctx.font = "20px system-ui";
       ctx.fillText(`Tileset: ${firstKey}`, 20, 40);
-      ctx.drawImage(img, 20, 70, 64, 64);
+      const TILE = 32;
+const GRID_W = 10;
+const GRID_H = 10;
+const START_X = 20;
+const START_Y = 80;
+
+for (let y = 0; y < GRID_H; y++) {
+  for (let x = 0; x < GRID_W; x++) {
+    ctx.drawImage(
+      img,
+      START_X + x * TILE,
+      START_Y + y * TILE,
+      TILE,
+      TILE
+    );
+  }
+}
 
       log("Tile drawn ✅");
     } catch (err) {
