@@ -2,66 +2,226 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Guardians Remnant – Creator Engine</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Guardians Remnant – Creator Engine (Step 2: Place Tiles)</title>
 <style>
-html,body{margin:0;padding:0;background:#0b1320;color:#7fd4ff;font-family:system-ui;}
-#log{position:fixed;left:10px;top:10px;background:rgba(0,0,0,.35);padding:8px;border:1px solid rgba(127,212,255,.4);border-radius:6px}
-#ui{position:fixed;right:10px;top:10px;display:flex;gap:6px}
-button{background:#12233f;color:#7fd4ff;border:1px solid #2b5ea8;padding:6px 10px;border-radius:6px}
-canvas{display:block}
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: #0b1320;
+    overflow: hidden;
+    touch-action: none; /* critical for iPhone */
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  #log {
+    position: fixed;
+    left: 10px;
+    top: 10px;
+    z-index: 20;
+    color: #7fd4ff;
+    font: 14px system-ui, -apple-system, BlinkMacSystemFont;
+    background: rgba(0,0,0,0.35);
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(127,212,255,0.35);
+    white-space: pre;
+  }
+  #ui {
+    position: fixed;
+    right: 10px;
+    top: 10px;
+    z-index: 25;
+    display: flex;
+    gap: 8px;
+  }
+  button {
+    background: rgba(18, 35, 63, 0.85);
+    color: #7fd4ff;
+    border: 1px solid rgba(127,212,255,0.35);
+    padding: 8px 12px;
+    border-radius: 10px;
+    font: 14px system-ui;
+  }
+  canvas { display: block; }
 </style>
 </head>
 <body>
+
 <div id="log">Booting…</div>
 <div id="ui">
-<button id="clear">Clear</button>
-<button id="export">Export</button>
+  <button id="clear">Clear</button>
+  <button id="export">Export</button>
 </div>
 <canvas id="game"></canvas>
 
 <script type="module">
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
-const log = msg => document.getElementById("log").textContent = msg;
+const logEl = document.getElementById("log");
 
 const TILE = 32;
-let map = JSON.parse(localStorage.getItem("gr_map")||"[]");
+const STORAGE_KEY = "gr_map_v1";
 
+// Simple single-tile brush for Step 2
+const BRUSH = { id: 1, color: "#3fb950" };
+
+// Map storage: key "x,y" => tileId (for now only 1)
+let map = loadMap();
+
+let frame = 0;
+
+// DPR-safe resize
 function resize(){
- canvas.width = innerWidth;
- canvas.height = innerHeight;
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = Math.floor(window.innerWidth * dpr);
+  canvas.height = Math.floor(window.innerHeight * dpr);
+  canvas.style.width = window.innerWidth + "px";
+  canvas.style.height = window.innerHeight + "px";
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
-addEventListener("resize",resize); resize();
+window.addEventListener("resize", resize);
+resize();
 
-canvas.addEventListener("click",e=>{
- const x=Math.floor(e.offsetX/TILE);
- const y=Math.floor(e.offsetY/TILE);
- map.push({x,y});
- localStorage.setItem("gr_map",JSON.stringify(map));
+function log(msg){ logEl.textContent = msg; }
+
+function loadMap(){
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return {};
+    const obj = JSON.parse(raw);
+    return obj && typeof obj === "object" ? obj : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveMap(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
+}
+
+function clearMap(){
+  map = {};
+  localStorage.removeItem(STORAGE_KEY);
+}
+
+// --- UI buttons ---
+document.getElementById("clear").addEventListener("click", () => {
+  clearMap();
 });
 
-document.getElementById("clear").onclick=()=>{
- map=[]; localStorage.removeItem("gr_map");
-};
+document.getElementById("export").addEventListener("click", async () => {
+  const json = JSON.stringify(map, null, 2);
 
-document.getElementById("export").onclick=()=>{
- navigator.clipboard.writeText(JSON.stringify(map,null,2));
- alert("Map JSON copied");
-};
+  // Try clipboard first (works best on iOS Safari when triggered by click)
+  try {
+    await navigator.clipboard.writeText(json);
+    alert("Map JSON copied to clipboard ✅");
+    return;
+  } catch {}
 
-let ticks=0;
-function loop(){
- ctx.clearRect(0,0,canvas.width,canvas.height);
- ctx.strokeStyle="rgba(127,212,255,.25)";
- for(let x=0;x<canvas.width;x+=TILE){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,canvas.height);ctx.stroke();}
- for(let y=0;y<canvas.height;y+=TILE){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(canvas.width,y);ctx.stroke();}
- ctx.fillStyle="#3fb950";
- for(const t of map){ctx.fillRect(t.x*TILE,t.y*TILE,TILE,TILE);}
- ticks++; log("Saved tiles: "+map.length+" | Loop: "+ticks);
- requestAnimationFrame(loop);
+  // Fallback: download file
+  const blob = new Blob([json], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "map.json";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  alert("Map JSON downloaded ✅");
+});
+
+// --- Painting (Pointer Events) ---
+let pointerDown = false;
+let downX = 0, downY = 0;
+const TAP_SLOP = 8; // px threshold to treat as tap
+
+function screenToGrid(clientX, clientY){
+  const rect = canvas.getBoundingClientRect();
+  const sx = clientX - rect.left;
+  const sy = clientY - rect.top;
+  const gx = Math.floor(sx / TILE);
+  const gy = Math.floor(sy / TILE);
+  return { gx, gy };
 }
+
+function paintAt(clientX, clientY){
+  const { gx, gy } = screenToGrid(clientX, clientY);
+  const key = gx + "," + gy;
+  map[key] = BRUSH.id;
+  saveMap();
+}
+
+canvas.addEventListener("pointerdown", (e) => {
+  // Don't paint if user pressed a UI element
+  if (e.target.closest && e.target.closest("#ui")) return;
+  pointerDown = true;
+  downX = e.clientX;
+  downY = e.clientY;
+  canvas.setPointerCapture?.(e.pointerId);
+});
+
+canvas.addEventListener("pointerup", (e) => {
+  if (!pointerDown) return;
+  pointerDown = false;
+  const dx = Math.abs(e.clientX - downX);
+  const dy = Math.abs(e.clientY - downY);
+  if (dx <= TAP_SLOP && dy <= TAP_SLOP) {
+    paintAt(e.clientX, e.clientY);
+  }
+});
+
+// --- Draw ---
+function drawBackground(){
+  ctx.fillStyle = "#0b1320";
+  ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
+}
+
+function drawGrid(){
+  ctx.strokeStyle = "rgba(127,212,255,0.25)";
+  ctx.lineWidth = 1;
+  for(let x = 0; x <= window.innerWidth; x += TILE){
+    ctx.beginPath();
+    ctx.moveTo(x + 0.5, 0);
+    ctx.lineTo(x + 0.5, window.innerHeight);
+    ctx.stroke();
+  }
+  for(let y = 0; y <= window.innerHeight; y += TILE){
+    ctx.beginPath();
+    ctx.moveTo(0, y + 0.5);
+    ctx.lineTo(window.innerWidth, y + 0.5);
+    ctx.stroke();
+  }
+}
+
+function drawTiles(){
+  ctx.fillStyle = BRUSH.color;
+  for (const key in map){
+    const [gx, gy] = key.split(",").map(Number);
+    ctx.fillRect(gx * TILE, gy * TILE, TILE, TILE);
+  }
+}
+
+function loop(){
+  frame++;
+  drawBackground();
+  drawGrid();
+  drawTiles();
+
+  const count = Object.keys(map).length;
+  log(
+    "Step 2: Tap-to-place ✅\n" +
+    "Saved tiles: " + count + " | Loop: " + frame + "\n" +
+    "Tap any grid cell to paint"
+  );
+
+  requestAnimationFrame(loop);
+}
+
 loop();
 </script>
+
 </body>
 </html>
