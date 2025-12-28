@@ -1,119 +1,111 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sea of Stars Creator Engine</title>
-  <style>
-    body {
-      margin: 0;
-      background: #0a0f1a;
-      color: #7fd4ff;
-      font-family: system-ui, sans-serif;
-      overflow: hidden;
-    }
-    #log {
-      position: fixed;
-      left: 10px;
-      top: 10px;
-      padding: 8px 10px;
-      background: rgba(0,0,0,0.3);
-      border: 1px solid rgba(127,212,255,0.35);
-      border-radius: 6px;
-      font-size: 14px;
-      color: #7fd4ff;
-    }
-    canvas {
-      display: block;
-      width: 100vw;
-      height: 100vh;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Creator Engine</title>
+
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: #0b1622;
+    overflow: hidden;
+  }
+  #log {
+    position: fixed;
+    left: 10px;
+    top: 10px;
+    color: #7fd4ff;
+    font: 14px system-ui;
+    background: rgba(0,0,0,0.35);
+    padding: 10px;
+    border: 1px solid rgba(127,212,255,0.35);
+    border-radius: 6px;
+    z-index: 10;
+  }
+  canvas {
+    display: block;
+  }
+</style>
 </head>
+
 <body>
   <div id="log">Booting…</div>
   <canvas id="game"></canvas>
 
-  <script type="module">
-    const logEl = document.getElementById("log");
-    const canvas = document.getElementById("game");
-    const ctx = canvas.getContext("2d");
+<script type="module">
+const logEl = document.getElementById("log");
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
 
-    function log(msg) { logEl.textContent = msg; }
+function log(msg) { logEl.textContent = msg; }
 
-    function resize() {
-      const dpr = window.devicePixelRatio || 1;
-      canvas.width = Math.floor(window.innerWidth * dpr);
-      canvas.height = Math.floor(window.innerHeight * dpr);
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.imageSmoothingEnabled = false;
-    }
-
-    window.addEventListener("resize", resize);
-    resize();
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = "#7fd4ff";
-    ctx.font = "24px system-ui";
-    ctx.fillText("Engine boot…", 20, 60);
-
-    try {
-      log("Loading modules…");
-      await import("./engine/core/loop.js");
-
-      const tilesMod = await import("./engine/map/tilesets.js");
-      const Tilesets = tilesMod.Tilesets;
-
-      log("Engine modules loaded ✅");
-
-      const firstKey = Object.keys(Tilesets)[0];
-      const ts = Tilesets[firstKey];
-
-      if (!ts?.image) {
-        log("Tilesets loaded, but no image path found ❌");
-        throw new Error("Tilesets missing image path");
-      }
-
-      const img = new Image();
-      const timeoutMs = 4000;
-
-      const loaded = await new Promise((resolve, reject) => {
-        const to = setTimeout(() => reject(new Error("Image load timeout")), timeoutMs);
-        img.onload = () => { clearTimeout(to); resolve(true); };
-        img.onerror = () => { clearTimeout(to); reject(new Error("Image failed to load")); };
-        img.src = ts.image;
-      });
-
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = "#7fd4ff";
-      ctx.font = "20px system-ui";
-      ctx.fillText(`Tileset: ${firstKey}`, 20, 40);
-      const TILE = 32;
-const GRID_W = 10;
-const GRID_H = 10;
-const START_X = 20;
-const START_Y = 80;
-
-for (let y = 0; y < GRID_H; y++) {
-  for (let x = 0; x < GRID_W; x++) {
-    ctx.drawImage(
-      img,
-      START_X + x * TILE,
-      START_Y + y * TILE,
-      TILE,
-      TILE
-    );
-  }
+function resize() {
+  const dpr = window.devicePixelRatio || 1;
+  const w = Math.floor(window.innerWidth * dpr);
+  const h = Math.floor(window.innerHeight * dpr);
+  canvas.width = w;
+  canvas.height = h;
+  canvas.style.width = window.innerWidth + "px";
+  canvas.style.height = window.innerHeight + "px";
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.imageSmoothingEnabled = false;
 }
+window.addEventListener("resize", resize);
+resize();
 
-      log("Tile drawn ✅");
-    } catch (err) {
-      console.error(err);
-      log("Error ❌ " + (err?.message || err));
-      ctx.fillStyle = "#ff6b6b";
-      ctx.font = "18px system-ui";
-      ctx.fillText("Boot error (see log)", 20, 110);
+// Immediate visual proof
+ctx.fillStyle = "#7fd4ff";
+ctx.font = "24px system-ui";
+ctx.fillText("Engine boot…", 20, 50);
+
+try {
+  await import("./engine/core/loop.js");
+  const { Tilesets } = await import("./engine/map/tilesets.js");
+
+  log("Engine modules loaded ✅");
+
+  const firstKey = Object.keys(Tilesets)[0];
+  const ts = Tilesets[firstKey];
+  if (!ts?.image) throw new Error("Tileset image path missing");
+
+  const img = new Image();
+  await new Promise((resolve, reject) => {
+    img.onload = resolve;
+    img.onerror = () => reject(new Error("Image failed to load"));
+    img.src = ts.image;
+  });
+
+  // Clear + background
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "#102030";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Draw grid
+  const TILE = 32;
+  const GRID_W = 10;
+  const GRID_H = 10;
+
+  for (let y = 0; y < GRID_H; y++) {
+    for (let x = 0; x < GRID_W; x++) {
+      ctx.drawImage(img, x * TILE, y * TILE, TILE, TILE);
     }
-  </script>
+  }
+
+  ctx.fillStyle = "#7fd4ff";
+  ctx.font = "16px system-ui";
+  ctx.fillText("Grid rendered", 10, GRID_H * TILE + 28);
+
+  log("Tile grid drawn ✅");
+
+} catch (err) {
+  console.error(err);
+  log("Error ❌ " + err.message);
+  ctx.fillStyle = "#ff6b6b";
+  ctx.font = "18px system-ui";
+  ctx.fillText("Boot error", 20, 90);
+}
+</script>
 </body>
 </html>
