@@ -2,605 +2,119 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<title>Guardians Remnant – Creator Engine (Step 4A: Export/Import Maps)</title>
+<title>Guardians Remnant – Step 4B Load Map</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <style>
-  html, body {
-    margin: 0;
-    padding: 0;
-    background: #0b1320;
-    overflow: hidden;
-    touch-action: none;
-    -webkit-user-select: none;
-    user-select: none;
-  }
-  #log {
-    position: fixed;
-    left: 10px;
-    top: 10px;
-    z-index: 30;
-    color: #7fd4ff;
-    font: 14px system-ui, -apple-system, BlinkMacSystemFont;
-    background: rgba(0,0,0,0.35);
-    padding: 10px;
-    border-radius: 8px;
-    border: 1px solid rgba(127,212,255,0.35);
-    white-space: pre;
-    max-width: calc(100vw - 20px);
-  }
-  #topui {
-    position: fixed;
-    right: 10px;
-    top: 10px;
-    z-index: 35;
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-  }
-  button {
-    background: rgba(18, 35, 63, 0.85);
-    color: #7fd4ff;
-    border: 1px solid rgba(127,212,255,0.35);
-    padding: 8px 12px;
-    border-radius: 10px;
-    font: 14px system-ui;
-  }
-  #palette {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: 86px;
-    z-index: 40;
-    display: flex;
-    gap: 10px;
-    padding: 10px 12px;
-    background: rgba(0,0,0,0.55);
-    border-top: 1px solid rgba(127,212,255,0.20);
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-  .tileBtn {
-    min-width: 64px;
-    height: 64px;
-    border-radius: 12px;
-    border: 2px solid rgba(127,212,255,0.20);
-    background: rgba(10,20,35,0.35);
-    display: grid;
-    place-items: center;
-    position: relative;
-    flex: 0 0 auto;
-  }
-  .tileBtn.selected {
-    border-color: rgba(127,212,255,0.90);
-    box-shadow: 0 0 0 2px rgba(127,212,255,0.25) inset;
-  }
-  .tileBtn span {
-    position: absolute;
-    bottom: -2px;
-    left: 0;
-    right: 0;
-    text-align: center;
-    font: 10px system-ui;
-    color: rgba(127,212,255,0.8);
-    transform: translateY(100%);
-    padding-top: 6px;
-    white-space: nowrap;
-  }
-  #modalBack {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.55);
-    display: none;
-    z-index: 100;
-  }
-  #modal {
-    position: fixed;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    width: min(92vw, 720px);
-    background: rgba(10,20,35,0.96);
-    border: 1px solid rgba(127,212,255,0.35);
-    border-radius: 14px;
-    padding: 12px;
-    display: none;
-    z-index: 110;
-    color: #cfeeff;
-    font: 14px system-ui;
-  }
-  #modal h3 {
-    margin: 4px 0 8px;
-    font-size: 16px;
-    color: #7fd4ff;
-  }
-  #modal .row {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin: 8px 0;
-    align-items: center;
-  }
-  #modal input, #modal textarea {
-    width: 100%;
-    border-radius: 10px;
-    border: 1px solid rgba(127,212,255,0.25);
-    background: rgba(0,0,0,0.35);
-    color: #cfeeff;
-    padding: 10px;
-    font: 13px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  }
-  #modal textarea { height: 40vh; resize: vertical; }
-  #modal .actions {
-    display: flex;
-    gap: 8px;
-    justify-content: flex-end;
-    margin-top: 10px;
-    flex-wrap: wrap;
-  }
-  canvas { display: block; }
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #0b1220;
+  color: #9fdcff;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+#ui {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  background: rgba(0,0,0,0.4);
+  border: 1px solid rgba(120,200,255,0.4);
+  padding: 10px;
+  border-radius: 8px;
+}
+button {
+  background: #142a44;
+  color: #9fdcff;
+  border: 1px solid rgba(120,200,255,0.4);
+  border-radius: 6px;
+  padding: 6px 10px;
+  margin-right: 6px;
+}
+canvas {
+  display: block;
+}
 </style>
 </head>
 <body>
 
-<div id="log">Booting…</div>
-<div id="topui">
-  <button id="newMap">New Map</button>
-  <button id="saveLocal">Save</button>
-  <button id="loadLocal">Load</button>
-  <button id="exportFile">Export File</button>
-  <button id="import">Import</button>
-  <button id="clear">Clear Tiles</button>
+<div id="ui">
+  <strong>Step 4B: Load .grmap.json</strong><br/><br/>
+  <input type="file" id="fileInput" accept=".json" /><br/><br/>
+  <span id="status">Waiting for file…</span>
 </div>
 
 <canvas id="game"></canvas>
-<div id="palette"></div>
 
-<div id="modalBack"></div>
-<div id="modal">
-  <h3 id="modalTitle">Import Map JSON</h3>
-  <div class="row" id="nameRow" style="display:none;">
-    <label style="width:100%; color:#7fd4ff; font-size:12px;">Map name</label>
-    <input id="mapNameInput" placeholder="e.g. Overworld_Start" />
-  </div>
-  <label style="width:100%; color:#7fd4ff; font-size:12px;">JSON</label>
-  <textarea id="jsonArea" placeholder="Paste map JSON here…"></textarea>
-  <div class="actions">
-    <button id="copyJson">Copy JSON</button>
-    <button id="applyJson">Apply</button>
-    <button id="closeModal">Close</button>
-  </div>
-</div>
-
-<script type="module">
+<script>
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
-const logEl = document.getElementById("log");
-const paletteEl = document.getElementById("palette");
+const statusEl = document.getElementById("status");
 
-const modalBack = document.getElementById("modalBack");
-const modal = document.getElementById("modal");
-const jsonArea = document.getElementById("jsonArea");
-const modalTitle = document.getElementById("modalTitle");
-const mapNameInput = document.getElementById("mapNameInput");
-const nameRow = document.getElementById("nameRow");
+const TILE_SIZE = 32;
+let mapData = null;
 
-const TILE = 32;
-
-// Storage keys
-const LOCAL_MAP_KEY = "gr_active_map_v1";       // stores full map JSON
-const LOCAL_AUTOSAVE_KEY = "gr_autosave_tiles"; // legacy-ish tiles only (optional)
-
-// ---- DPR-safe resize ----
-function resize(){
-  const dpr = window.devicePixelRatio || 1;
-  canvas.width = Math.floor(window.innerWidth * dpr);
-  canvas.height = Math.floor(window.innerHeight * dpr);
-  canvas.style.width = window.innerWidth + "px";
-  canvas.style.height = window.innerHeight + "px";
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+function resize() {
+  canvas.width = window.innerWidth * devicePixelRatio;
+  canvas.height = window.innerHeight * devicePixelRatio;
+  ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
 }
 window.addEventListener("resize", resize);
 resize();
 
-function log(msg){ logEl.textContent = msg; }
-
-// ---- Sprite generation helpers ----
-function makeSprite(drawFn){
-  const c = document.createElement("canvas");
-  c.width = TILE; c.height = TILE;
-  const g = c.getContext("2d");
-  drawFn(g);
-  const img = new Image();
-  img.src = c.toDataURL("image/png");
-  return img;
-}
-
-// Placeholder tiles (original)
-const TileDefs = [
-  { id: 1, name: "Grass", sprite: makeSprite((g) => {
-      g.fillStyle = "#1a7f3a"; g.fillRect(0,0,TILE,TILE);
-      g.fillStyle = "#25a64a";
-      for (let i=0;i<70;i++){ g.fillRect((Math.random()*TILE)|0, (Math.random()*TILE)|0, 1, 1); }
-      g.fillStyle = "rgba(255,255,255,0.10)"; g.fillRect(0,0,TILE,4);
-  })},
-  { id: 2, name: "Dirt", sprite: makeSprite((g) => {
-      g.fillStyle = "#6b3f24"; g.fillRect(0,0,TILE,TILE);
-      g.fillStyle = "#8a5832";
-      for (let i=0;i<90;i++){ g.fillRect((Math.random()*TILE)|0, (Math.random()*TILE)|0, 1, 1); }
-      g.fillStyle="rgba(0,0,0,0.10)"; g.fillRect(0,TILE-4,TILE,4);
-  })},
-  { id: 3, name: "Stone", sprite: makeSprite((g) => {
-      g.fillStyle = "#59606b"; g.fillRect(0,0,TILE,TILE);
-      g.fillStyle = "#747c89";
-      for (let i=0;i<80;i++){ g.fillRect((Math.random()*TILE)|0, (Math.random()*TILE)|0, 1, 1); }
-      g.strokeStyle="rgba(255,255,255,0.15)";
-      g.beginPath(); g.moveTo(4,10); g.lineTo(28,6); g.stroke();
-      g.beginPath(); g.moveTo(6,22); g.lineTo(26,26); g.stroke();
-  })},
-  { id: 4, name: "Water", sprite: makeSprite((g) => {
-      g.fillStyle = "#0b4ea2"; g.fillRect(0,0,TILE,TILE);
-      g.fillStyle = "rgba(90,190,255,0.65)";
-      for (let y=6; y<TILE; y+=8){
-        g.beginPath(); g.ellipse(10, y, 8, 3, 0, 0, Math.PI*2); g.fill();
-        g.beginPath(); g.ellipse(24, y+2, 7, 3, 0, 0, Math.PI*2); g.fill();
-      }
-      g.fillStyle = "rgba(255,255,255,0.10)"; g.fillRect(0,0,TILE,3);
-  })},
-];
-
-const Eraser = {
-  id: 0, name: "Eraser",
-  sprite: makeSprite((g)=>{
-    g.fillStyle = "#14243f"; g.fillRect(0,0,TILE,TILE);
-    g.strokeStyle = "rgba(127,212,255,0.55)";
-    g.lineWidth = 2;
-    g.beginPath(); g.moveTo(6,6); g.lineTo(26,26); g.stroke();
-    g.beginPath(); g.moveTo(26,6); g.lineTo(6,26); g.stroke();
-  })
-};
-
-const TilesById = new Map(TileDefs.map(t => [t.id, t]));
-TilesById.set(Eraser.id, Eraser);
-
-// ---- Map format (versioned) ----
-/*
-Map JSON:
-{
-  "format": "gr.map.v1",
-  "name": "Overworld_Start",
-  "tileSize": 32,
-  "width": 0, // optional; computed from placements
-  "height": 0,
-  "tiles": { "x,y": tileId, ... },
-  "createdAt": "...",
-  "updatedAt": "..."
-}
-*/
-
-function newMap(name="NewMap"){
-  const now = new Date().toISOString();
-  return {
-    format: "gr.map.v1",
-    name,
-    tileSize: TILE,
-    width: 0,
-    height: 0,
-    tiles: {},
-    createdAt: now,
-    updatedAt: now,
-  };
-}
-
-// active map in memory
-let active = loadLocalMap() || migrateLegacyAutosave() || newMap("Overworld_Start");
-let selected = TileDefs[0];
-
-function migrateLegacyAutosave(){
-  // If user has older tiles-only data saved, convert it once.
-  try {
-    const raw = localStorage.getItem(LOCAL_AUTOSAVE_KEY);
-    if (!raw) return null;
-    const tiles = JSON.parse(raw);
-    if (!tiles || typeof tiles !== "object") return null;
-    const m = newMap("Migrated_Map");
-    m.tiles = tiles;
-    m.updatedAt = new Date().toISOString();
-    localStorage.removeItem(LOCAL_AUTOSAVE_KEY);
-    saveLocalMap(m);
-    return m;
-  } catch { return null; }
-}
-
-function computeBounds(tiles){
-  let maxX = 0, maxY = 0;
-  for (const key in tiles){
-    const [x,y] = key.split(",").map(Number);
-    if (x > maxX) maxX = x;
-    if (y > maxY) maxY = y;
+function drawGrid() {
+  ctx.strokeStyle = "rgba(120,200,255,0.25)";
+  for (let x = 0; x < canvas.width; x += TILE_SIZE) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, canvas.height);
+    ctx.stroke();
   }
-  return { width: maxX+1, height: maxY+1 };
-}
-
-function saveLocalMap(mapObj=active){
-  mapObj.updatedAt = new Date().toISOString();
-  const b = computeBounds(mapObj.tiles);
-  mapObj.width = b.width;
-  mapObj.height = b.height;
-  localStorage.setItem(LOCAL_MAP_KEY, JSON.stringify(mapObj));
-}
-
-function loadLocalMap(){
-  try {
-    const raw = localStorage.getItem(LOCAL_MAP_KEY);
-    if (!raw) return null;
-    const obj = JSON.parse(raw);
-    if (!obj || obj.format !== "gr.map.v1" || typeof obj.tiles !== "object") return null;
-    return obj;
-  } catch { return null; }
-}
-
-function clearTiles(){
-  active.tiles = {};
-  saveLocalMap();
-}
-
-// ---- Palette UI ----
-function makeTileButton(tile){
-  const btn = document.createElement("div");
-  btn.className = "tileBtn" + (tile.id === selected.id ? " selected" : "");
-  const mini = document.createElement("canvas");
-  mini.width = 48; mini.height = 48;
-  const mctx = mini.getContext("2d");
-  function drawMini(){
-    mctx.imageSmoothingEnabled = false;
-    mctx.clearRect(0,0,48,48);
-    mctx.drawImage(tile.sprite, 0, 0, 48, 48);
+  for (let y = 0; y < canvas.height; y += TILE_SIZE) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(canvas.width, y);
+    ctx.stroke();
   }
-  tile.sprite.onload = drawMini;
-  if (tile.sprite.complete) drawMini();
-  btn.appendChild(mini);
+}
 
-  const label = document.createElement("span");
-  label.textContent = tile.name;
-  btn.appendChild(label);
+function drawMap() {
+  if (!mapData) return;
 
-  btn.addEventListener("click", () => {
-    selected = tile;
-    document.querySelectorAll(".tileBtn").forEach(el => el.classList.remove("selected"));
-    btn.classList.add("selected");
+  Object.entries(mapData.tiles).forEach(([key, tileId]) => {
+    const [x, y] = key.split(",").map(Number);
+    ctx.fillStyle =
+      tileId === 1 ? "#3cb371" :
+      tileId === 2 ? "#8b5a2b" :
+      tileId === 3 ? "#777" :
+      tileId === 4 ? "#3aa0ff" :
+      "#fff";
+    ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
   });
-
-  return btn;
-}
-paletteEl.appendChild(makeTileButton(TileDefs[0]));
-paletteEl.appendChild(makeTileButton(TileDefs[1]));
-paletteEl.appendChild(makeTileButton(TileDefs[2]));
-paletteEl.appendChild(makeTileButton(TileDefs[3]));
-paletteEl.appendChild(makeTileButton(Eraser));
-
-// ---- Modal helpers ----
-function openModal(mode, jsonText=""){
-  modalBack.style.display = "block";
-  modal.style.display = "block";
-  jsonArea.value = jsonText;
-
-  if (mode === "import") {
-    modalTitle.textContent = "Import Map JSON";
-    nameRow.style.display = "none";
-  } else if (mode === "new") {
-    modalTitle.textContent = "Create New Map";
-    nameRow.style.display = "block";
-    mapNameInput.value = active?.name || "NewMap";
-    jsonArea.value = "";
-    jsonArea.placeholder = "Optional: paste JSON to start from…";
-  } else if (mode === "view") {
-    modalTitle.textContent = "Map JSON (for copy/export)";
-    nameRow.style.display = "none";
-  }
-
-  modal.dataset.mode = mode;
 }
 
-function closeModal(){
-  modalBack.style.display = "none";
-  modal.style.display = "none";
-  jsonArea.value = "";
-  modal.dataset.mode = "";
-}
-
-modalBack.addEventListener("click", closeModal);
-document.getElementById("closeModal").addEventListener("click", closeModal);
-
-// Copy JSON from modal
-document.getElementById("copyJson").addEventListener("click", async () => {
-  const txt = jsonArea.value || "";
-  if (!txt.trim()) return alert("Nothing to copy.");
-  try { await navigator.clipboard.writeText(txt); alert("Copied ✅"); }
-  catch { alert("Clipboard blocked. Use Select All → Copy."); }
-});
-
-// Apply/import from modal
-document.getElementById("applyJson").addEventListener("click", () => {
-  const mode = modal.dataset.mode;
-  if (mode === "import") {
-    const txt = jsonArea.value.trim();
-    if (!txt) return alert("Paste JSON first.");
-    try {
-      const obj = JSON.parse(txt);
-      if (!obj || obj.format !== "gr.map.v1" || typeof obj.tiles !== "object") {
-        return alert("Invalid map JSON (expected format gr.map.v1).");
-      }
-      active = obj;
-      saveLocalMap(active);
-      closeModal();
-    } catch (e) {
-      alert("JSON parse error.");
-    }
-  } else if (mode === "new") {
-    const name = (mapNameInput.value || "NewMap").trim();
-    const txt = jsonArea.value.trim();
-    if (txt) {
-      // If they pasted JSON, use it as base, but ensure name
-      try {
-        const obj = JSON.parse(txt);
-        if (!obj || obj.format !== "gr.map.v1" || typeof obj.tiles !== "object") {
-          return alert("Invalid JSON pasted. Leave JSON blank or paste a valid map.");
-        }
-        obj.name = name;
-        active = obj;
-        saveLocalMap(active);
-        closeModal();
-      } catch {
-        alert("JSON parse error.");
-      }
-    } else {
-      active = newMap(name);
-      saveLocalMap(active);
-      closeModal();
-    }
-  } else if (mode === "view") {
-    closeModal();
-  }
-});
-
-// ---- Buttons ----
-document.getElementById("newMap").addEventListener("click", () => {
-  openModal("new");
-});
-
-document.getElementById("saveLocal").addEventListener("click", () => {
-  saveLocalMap(active);
-  alert("Saved ✅");
-});
-
-document.getElementById("loadLocal").addEventListener("click", () => {
-  const m = loadLocalMap();
-  if (!m) return alert("No saved map found.");
-  active = m;
-  alert("Loaded ✅");
-});
-
-document.getElementById("clear").addEventListener("click", () => {
-  clearTiles();
-});
-
-document.getElementById("exportFile").addEventListener("click", async () => {
-  // Export full map JSON as file + also offer copy.
-  const json = JSON.stringify(active, null, 2);
-
-  // Best effort copy (iOS)
-  try { await navigator.clipboard.writeText(json); }
-  catch {}
-
-  const blob = new Blob([json], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  const safeName = (active.name || "map").replace(/[^a-z0-9_-]/gi, "_");
-  a.href = url; a.download = safeName + ".grmap.json";
-  document.body.appendChild(a); a.click(); a.remove();
-  URL.revokeObjectURL(url);
-  alert("Exported map file ✅");
-});
-
-document.getElementById("import").addEventListener("click", () => {
-  openModal("import");
-});
-
-// ---- Painting ----
-let pointerDown = false;
-let downX = 0, downY = 0;
-const TAP_SLOP = 8;
-
-function screenToGrid(clientX, clientY){
-  const rect = canvas.getBoundingClientRect();
-  const sx = clientX - rect.left;
-  const sy = clientY - rect.top;
-  return {
-    gx: Math.floor(sx / TILE),
-    gy: Math.floor(sy / TILE),
-  };
-}
-
-function paintAt(clientX, clientY){
-  const { gx, gy } = screenToGrid(clientX, clientY);
-  const key = gx + "," + gy;
-
-  if (selected.id === 0) {
-    if (key in active.tiles) delete active.tiles[key];
-  } else {
-    active.tiles[key] = selected.id;
-  }
-  // autosave immediately (important on mobile)
-  saveLocalMap(active);
-}
-
-canvas.addEventListener("pointerdown", (e) => {
-  // ignore when modal open
-  if (modal.style.display === "block") return;
-  pointerDown = true;
-  downX = e.clientX; downY = e.clientY;
-  canvas.setPointerCapture?.(e.pointerId);
-});
-
-canvas.addEventListener("pointerup", (e) => {
-  if (!pointerDown) return;
-  pointerDown = false;
-  const dx = Math.abs(e.clientX - downX);
-  const dy = Math.abs(e.clientY - downY);
-  if (dx <= TAP_SLOP && dy <= TAP_SLOP) paintAt(e.clientX, e.clientY);
-});
-
-// ---- Render ----
-let frame = 0;
-
-function drawBackground(){
-  ctx.fillStyle = "#0b1320";
-  ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
-}
-
-function drawGrid(){
-  ctx.strokeStyle = "rgba(127,212,255,0.22)";
-  ctx.lineWidth = 1;
-  for(let x = 0; x <= window.innerWidth; x += TILE){
-    ctx.beginPath(); ctx.moveTo(x + 0.5, 0); ctx.lineTo(x + 0.5, window.innerHeight); ctx.stroke();
-  }
-  for(let y = 0; y <= window.innerHeight; y += TILE){
-    ctx.beginPath(); ctx.moveTo(0, y + 0.5); ctx.lineTo(window.innerWidth, y + 0.5); ctx.stroke();
-  }
-}
-
-function drawTiles(){
-  ctx.imageSmoothingEnabled = false;
-  for (const key in active.tiles){
-    const id = active.tiles[key];
-    const tile = TilesById.get(id);
-    if (!tile) continue;
-    const [gx, gy] = key.split(",").map(Number);
-    ctx.drawImage(tile.sprite, gx * TILE, gy * TILE, TILE, TILE);
-  }
-}
-
-function loop(){
-  frame++;
-  drawBackground();
+function loop() {
+  ctx.clearRect(0,0,canvas.width,canvas.height);
   drawGrid();
-  drawTiles();
-
-  const count = Object.keys(active.tiles).length;
-  log(
-    "Step 4A: Export/Import Maps ✅\n" +
-    "Map: " + (active.name || "Unnamed") + " | Saved tiles: " + count + "\n" +
-    "Export File = downloads .grmap.json\n" +
-    "Import = paste JSON to load\n" +
-    "Loop: " + frame
-  );
-
+  drawMap();
   requestAnimationFrame(loop);
 }
-
 loop();
+
+document.getElementById("fileInput").addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      mapData = JSON.parse(reader.result);
+      statusEl.textContent = "Loaded map: " + mapData.name;
+    } catch (err) {
+      statusEl.textContent = "Invalid map file";
+    }
+  };
+  reader.readAsText(file);
+});
 </script>
+
 </body>
 </html>
