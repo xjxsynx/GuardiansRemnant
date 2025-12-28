@@ -1,63 +1,87 @@
-// STEP 6C — Runtime Map Injection + Player Spawn
 
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
 const TILE = 32;
-let map = null;
-let player = { x:0, y:0 };
+const MAP = {
+  width: 20,
+  height: 12,
+  solid: new Set(["2,5","3,5","4,5","5,5","6,5","7,5"])
+};
 
-function resize(){
- canvas.width = innerWidth * devicePixelRatio;
- canvas.height = innerHeight * devicePixelRatio;
- ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
-}
-addEventListener("resize", resize);
-resize();
+const camera = { x:0, y:0 };
 
-async function loadMap(){
- const res = await fetch("./Overworld_Start.grmap.json");
- map = await res.json();
+const player = {
+  x:1, y:5,
+  px:1*TILE, py:5*TILE,
+  moving:false,
+  speed:6
+};
 
- // spawn on first tile
- const keys = Object.keys(map.tiles);
- if(keys.length){
-   const [gx,gy] = keys[0].split(",").map(Number);
-   player.x = gx * TILE;
-   player.y = gy * TILE;
- }
-}
-await loadMap();
-
-function drawGrid(){
- ctx.strokeStyle = "rgba(120,180,255,.25)";
- for(let x=0;x<canvas.width;x+=TILE){
-  ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,canvas.height);ctx.stroke();
- }
- for(let y=0;y<canvas.height;y+=TILE){
-  ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(canvas.width,y);ctx.stroke();
- }
+function isSolid(x,y){
+  return MAP.solid.has(`${x},${y}`);
 }
 
-function drawMap(){
- for(const k in map.tiles){
-  const [gx,gy] = k.split(",").map(Number);
-  const id = map.tiles[k];
-  ctx.fillStyle = id===1?"#3fa94a":id===4?"#3b8dff":"#888";
-  ctx.fillRect(gx*TILE, gy*TILE, TILE, TILE);
- }
+function tryMove(dx,dy){
+  if(player.moving) return;
+  const nx = player.x + dx;
+  const ny = player.y + dy;
+  if(nx<0||ny<0||nx>=MAP.width||ny>=MAP.height) return;
+  if(isSolid(nx,ny)) return;
+  player.x = nx; player.y = ny;
+  player.moving = true;
 }
 
-function drawPlayer(){
- ctx.fillStyle = "#9aff6a";
- ctx.fillRect(player.x, player.y, TILE, TILE);
+window.addEventListener("keydown",e=>{
+  if(e.key==="ArrowUp"||e.key==="w") tryMove(0,-1);
+  if(e.key==="ArrowDown"||e.key==="s") tryMove(0,1);
+  if(e.key==="ArrowLeft"||e.key==="a") tryMove(-1,0);
+  if(e.key==="ArrowRight"||e.key==="d") tryMove(1,0);
+});
+
+canvas.addEventListener("touchstart",e=>{
+  const t = e.touches[0];
+  const cx = canvas.width/2;
+  const cy = canvas.height/2;
+  const dx = t.clientX - cx;
+  const dy = t.clientY - cy;
+  if(Math.abs(dx)>Math.abs(dy)){
+    tryMove(dx>0?1:-1,0);
+  }else{
+    tryMove(0,dy>0?1:-1);
+  }
+});
+
+function update(){
+  const tx = player.x*TILE;
+  const ty = player.y*TILE;
+  player.px += (tx-player.px)/player.speed;
+  player.py += (ty-player.py)/player.speed;
+  if(Math.abs(player.px-tx)<1 && Math.abs(player.py-ty)<1){
+    player.px=tx; player.py=ty; player.moving=false;
+  }
+  camera.x = Math.max(0, player.px - canvas.width/2 + TILE/2);
+  camera.y = Math.max(0, player.py - canvas.height/2 + TILE/2);
+}
+
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.strokeStyle="#123";
+  for(let x=0;x<MAP.width;x++){
+    for(let y=0;y<MAP.height;y++){
+      ctx.strokeRect(x*TILE-camera.x,y*TILE-camera.y,TILE,TILE);
+    }
+  }
+  ctx.fillStyle="#2a7";
+  MAP.solid.forEach(p=>{
+    const [x,y]=p.split(",").map(Number);
+    ctx.fillRect(x*TILE-camera.x,y*TILE-camera.y,TILE,TILE);
+  });
+  ctx.fillStyle="#4f8";
+  ctx.fillRect(player.px-camera.x,player.py-camera.y,TILE,TILE);
 }
 
 function loop(){
- ctx.clearRect(0,0,canvas.width,canvas.height);
- drawMap();
- drawPlayer();
- drawGrid();
- requestAnimationFrame(loop);
+  update(); draw(); requestAnimationFrame(loop);
 }
 loop();
