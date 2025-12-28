@@ -1,17 +1,32 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <title>Guardians Remnant – Creator Engine</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sea of Stars Creator Engine</title>
   <style>
-    html, body { margin:0; padding:0; background:#0b1a2a; overflow:hidden; }
-    canvas { display:block; width:100vw; height:100vh; image-rendering: pixelated; }
+    body {
+      margin: 0;
+      background: #0a0f1a;
+      color: #7fd4ff;
+      font-family: system-ui, sans-serif;
+      overflow: hidden;
+    }
     #log {
-      position: fixed; left: 10px; top: 10px; right: 10px;
-      color:#7fd4ff; font: 14px system-ui; line-height: 1.3;
-      background: rgba(0,0,0,0.25); padding:10px; border-radius:10px;
-      border:1px solid rgba(127,212,255,0.35);
+      position: fixed;
+      left: 10px;
+      top: 10px;
+      padding: 8px 10px;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid rgba(127,212,255,0.35);
+      border-radius: 6px;
+      font-size: 14px;
+      color: #7fd4ff;
+    }
+    canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
     }
   </style>
 </head>
@@ -24,40 +39,65 @@
     const canvas = document.getElementById("game");
     const ctx = canvas.getContext("2d");
 
-    function log(msg){ logEl.textContent = msg; }
-    function resize(){
-      canvas.width = Math.floor(window.innerWidth * devicePixelRatio);
-      canvas.height = Math.floor(window.innerHeight * devicePixelRatio);
-      ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+    function log(msg) { logEl.textContent = msg; }
+
+    function resize() {
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = Math.floor(window.innerWidth * dpr);
+      canvas.height = Math.floor(window.innerHeight * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.imageSmoothingEnabled = false;
     }
+
     window.addEventListener("resize", resize);
     resize();
 
-    // Visual proof immediately (even if imports fail)
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = "#7fd4ff";
     ctx.font = "24px system-ui";
-    ctx.fillText("Engine boot…", 20, 50);
+    ctx.fillText("Engine boot…", 20, 60);
 
     try {
-      // Load engine modules (these paths must exist in your repo)
+      log("Loading modules…");
       await import("./engine/core/loop.js");
-      await import("./engine/map/tilesets.js");
+
+      const tilesMod = await import("./engine/map/tilesets.js");
+      const Tilesets = tilesMod.Tilesets;
 
       log("Engine modules loaded ✅");
 
-      const { Tilesets } = await import("./engine/map/tilesets.js");
+      const firstKey = Object.keys(Tilesets)[0];
+      const ts = Tilesets[firstKey];
 
-      // load the first tileset image
+      if (!ts?.image) {
+        log("Tilesets loaded, but no image path found ❌");
+        throw new Error("Tilesets missing image path");
+      }
+
       const img = new Image();
-      img.src = Tilesets.debug.image; // uses whatever you set in tilesets.js
+      const timeoutMs = 4000;
 
-      img.onload = () => {
-        // draw it big so you can see it clearly
-        ctx.imageSmoothingEnabled = false;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 20, 100, 64, 64);
-        log("Tile drawn ✅");
-      };
+      const loaded = await new Promise((resolve, reject) => {
+        const to = setTimeout(() => reject(new Error("Image load timeout")), timeoutMs);
+        img.onload = () => { clearTimeout(to); resolve(true); };
+        img.onerror = () => { clearTimeout(to); reject(new Error("Image failed to load")); };
+        img.src = ts.image;
+      });
 
-      img.onerror = () => {
-        log("Tile failed to load ❌ (check Tilesets.debug.image path)");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#7fd4ff";
+      ctx.font = "20px system-ui";
+      ctx.fillText(`Tileset: ${firstKey}`, 20, 40);
+      ctx.drawImage(img, 20, 70, 64, 64);
+
+      log("Tile drawn ✅");
+    } catch (err) {
+      console.error(err);
+      log("Error ❌ " + (err?.message || err));
+      ctx.fillStyle = "#ff6b6b";
+      ctx.font = "18px system-ui";
+      ctx.fillText("Boot error (see log)", 20, 110);
+    }
+  </script>
+</body>
+</html>
