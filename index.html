@@ -1,102 +1,133 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Guardians Remnant – Step 5A</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Guardians Remnant – Step 5C</title>
 <style>
-body { margin:0; background:#07131f; overflow:hidden; font-family:system-ui; }
+body {
+  margin: 0;
+  background: #08131f;
+  color: #7fd4ff;
+  font-family: system-ui, sans-serif;
+}
 #ui {
- position:fixed; top:10px; left:10px;
- background:rgba(0,0,0,.4);
- border:1px solid rgba(0,200,255,.35);
- padding:10px; border-radius:10px; color:#9feaff;
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  background: rgba(0,0,0,0.4);
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(127,212,255,0.35);
 }
 button {
- background:#0b2238; color:#9feaff;
- border:1px solid rgba(0,200,255,.35);
- padding:6px 10px; border-radius:8px;
- margin-right:6px;
+  margin: 4px 2px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(127,212,255,0.35);
+  background: rgba(0,0,0,0.4);
+  color: #7fd4ff;
 }
-button.active { background:#155e75; }
-canvas { display:block; }
+button.active {
+  background: rgba(127,212,255,0.25);
+}
+canvas {
+  display: block;
+}
 </style>
 </head>
 <body>
+
 <div id="ui">
-<b>Step 5A: Entity Layer (Sprites)</b><br><br>
-<button id="terrainBtn">Terrain</button>
-<button id="entityBtn" class="active">Entities</button>
-<button id="eraseBtn">Eraser</button>
+  <div><b>Step 5C: Entity Export + Layers</b></div>
+  <button id="terrainBtn" class="active">Terrain</button>
+  <button id="entityBtn">Entities</button>
+  <button id="exportEntitiesBtn">Export Entities</button>
+  <div id="status"></div>
 </div>
+
 <canvas id="game"></canvas>
 
 <script type="module">
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
-const DPR = window.devicePixelRatio || 1;
+const dpr = window.devicePixelRatio || 1;
+const tileSize = 32;
 
-let tileSize = 32;
-let gridW = 30, gridH = 20;
+let mode = "terrain";
 let entities = [];
-let mode = "entity";
-
-const playerImg = new Image();
-playerImg.src = "assets/entities/player.png";
 
 function resize(){
- canvas.width = innerWidth * DPR;
- canvas.height = innerHeight * DPR;
- canvas.style.width = innerWidth+"px";
- canvas.style.height = innerHeight+"px";
- ctx.setTransform(DPR,0,0,DPR,0,0);
+  canvas.width = window.innerWidth * dpr;
+  canvas.height = window.innerHeight * dpr;
+  canvas.style.width = window.innerWidth + "px";
+  canvas.style.height = window.innerHeight + "px";
+  ctx.setTransform(dpr,0,0,dpr,0,0);
 }
 window.addEventListener("resize", resize);
 resize();
 
-document.getElementById("terrainBtn").onclick=()=>mode="terrain";
-document.getElementById("entityBtn").onclick=()=>mode="entity";
-document.getElementById("eraseBtn").onclick=()=>mode="erase";
+document.getElementById("terrainBtn").onclick = () => setMode("terrain");
+document.getElementById("entityBtn").onclick = () => setMode("entity");
+document.getElementById("exportEntitiesBtn").onclick = exportEntities;
 
-canvas.addEventListener("pointerdown", e=>{
- const x = Math.floor(e.offsetX / tileSize);
- const y = Math.floor(e.offsetY / tileSize);
- if(mode==="entity"){
-   entities.push({type:"player", x, y});
- }
- if(mode==="erase"){
-   entities = entities.filter(ent=>!(ent.x===x && ent.y===y));
- }
+function setMode(m){
+  mode = m;
+  document.querySelectorAll("button").forEach(b=>b.classList.remove("active"));
+  if(m==="terrain") terrainBtn.classList.add("active");
+  if(m==="entity") entityBtn.classList.add("active");
+}
+
+canvas.addEventListener("click", e => {
+  if(mode !== "entity") return;
+  const x = Math.floor(e.clientX / tileSize);
+  const y = Math.floor(e.clientY / tileSize);
+  entities.push({
+    id: "entity_" + Date.now(),
+    x, y,
+    role: "npc",
+    mode: "static"
+  });
 });
 
+function exportEntities(){
+  const data = {
+    format: "gr.entities.v1",
+    map: "Overworld_Start",
+    exportedAt: new Date().toISOString(),
+    entities
+  };
+  const blob = new Blob([JSON.stringify(data,null,2)], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "Overworld_Start.grentities.json";
+  a.click();
+}
+
 function drawGrid(){
- ctx.strokeStyle="rgba(0,200,255,.15)";
- for(let x=0;x<gridW;x++){
-  ctx.beginPath();
-  ctx.moveTo(x*tileSize,0);
-  ctx.lineTo(x*tileSize,gridH*tileSize);
-  ctx.stroke();
- }
- for(let y=0;y<gridH;y++){
-  ctx.beginPath();
-  ctx.moveTo(0,y*tileSize);
-  ctx.lineTo(gridW*tileSize,y*tileSize);
-  ctx.stroke();
- }
+  ctx.strokeStyle = "rgba(127,212,255,0.25)";
+  for(let x=0;x<canvas.width;x+=tileSize){
+    ctx.beginPath();
+    ctx.moveTo(x,0); ctx.lineTo(x,canvas.height); ctx.stroke();
+  }
+  for(let y=0;y<canvas.height;y+=tileSize){
+    ctx.beginPath();
+    ctx.moveTo(0,y); ctx.lineTo(canvas.width,y); ctx.stroke();
+  }
 }
 
 function drawEntities(){
- for(const e of entities){
-  ctx.drawImage(playerImg, e.x*tileSize, e.y*tileSize, tileSize, tileSize);
- }
+  ctx.fillStyle = "#4cff7f";
+  entities.forEach(e=>{
+    ctx.fillRect(e.x*tileSize, e.y*tileSize, tileSize, tileSize);
+  });
 }
 
 function loop(){
- ctx.clearRect(0,0,canvas.width,canvas.height);
- drawGrid();
- drawEntities();
- requestAnimationFrame(loop);
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  drawGrid();
+  drawEntities();
+  requestAnimationFrame(loop);
 }
 loop();
 </script>
