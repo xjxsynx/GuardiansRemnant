@@ -2,110 +2,116 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Creator Engine</title>
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Guardians Remnant – Creator Engine</title>
 <style>
   html, body {
     margin: 0;
     padding: 0;
-    background: #0b1622;
+    background: #08131f;
     overflow: hidden;
   }
   #log {
     position: fixed;
     left: 10px;
     top: 10px;
+    z-index: 10;
     color: #7fd4ff;
-    font: 14px system-ui;
+    font: 14px system-ui, -apple-system, BlinkMacSystemFont;
     background: rgba(0,0,0,0.35);
     padding: 10px;
-    border: 1px solid rgba(127,212,255,0.35);
     border-radius: 6px;
-    z-index: 10;
+    border: 1px solid rgba(127,212,255,0.35);
   }
   canvas {
     display: block;
   }
 </style>
 </head>
-
 <body>
-  <div id="log">Booting…</div>
-  <canvas id="game"></canvas>
+
+<div id="log">Booting…</div>
+<canvas id="game"></canvas>
 
 <script type="module">
 const logEl = document.getElementById("log");
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-function log(msg) { logEl.textContent = msg; }
+const TILE_SIZE = 32;
+let frame = 0;
+
+function log(msg) {
+  logEl.textContent = msg;
+}
 
 function resize() {
   const dpr = window.devicePixelRatio || 1;
-  const w = Math.floor(window.innerWidth * dpr);
-  const h = Math.floor(window.innerHeight * dpr);
-  canvas.width = w;
-  canvas.height = h;
+  canvas.width = Math.floor(window.innerWidth * dpr);
+  canvas.height = Math.floor(window.innerHeight * dpr);
   canvas.style.width = window.innerWidth + "px";
   canvas.style.height = window.innerHeight + "px";
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.imageSmoothingEnabled = false;
 }
 window.addEventListener("resize", resize);
 resize();
 
-// Immediate visual proof
-ctx.fillStyle = "#7fd4ff";
-ctx.font = "24px system-ui";
-ctx.fillText("Engine boot…", 20, 50);
-
-try {
-  await import("./engine/core/loop.js");
-  const { Tilesets } = await import("./engine/map/tilesets.js");
-
-  log("Engine modules loaded ✅");
-
-  const firstKey = Object.keys(Tilesets)[0];
-  const ts = Tilesets[firstKey];
-  if (!ts?.image) throw new Error("Tileset image path missing");
-
-  const img = new Image();
-  await new Promise((resolve, reject) => {
-    img.onload = resolve;
-    img.onerror = () => reject(new Error("Image failed to load"));
-    img.src = ts.image;
-  });
-
-  // Clear + background
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = "#102030";
+function drawBackground() {
+  ctx.fillStyle = "#08131f";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
 
-  // Draw grid
-  const TILE = 32;
-  const GRID_W = 10;
-  const GRID_H = 10;
+function drawTestTile() {
+  ctx.fillStyle = "#2ecc71";
+  ctx.fillRect(0, 0, TILE_SIZE, TILE_SIZE);
+}
 
-  for (let y = 0; y < GRID_H; y++) {
-    for (let x = 0; x < GRID_W; x++) {
-      ctx.drawImage(img, x * TILE, y * TILE, TILE, TILE);
-    }
+function drawGrid(size) {
+  ctx.save();
+  ctx.strokeStyle = "rgba(0,255,255,0.55)";
+  ctx.lineWidth = 1;
+
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+
+  for (let x = 0; x < w; x += size) {
+    ctx.beginPath();
+    ctx.moveTo(x + 0.5, 0);
+    ctx.lineTo(x + 0.5, h);
+    ctx.stroke();
   }
 
-  ctx.fillStyle = "#7fd4ff";
-  ctx.font = "16px system-ui";
-  ctx.fillText("Grid rendered", 10, GRID_H * TILE + 28);
+  for (let y = 0; y < h; y += size) {
+    ctx.beginPath();
+    ctx.moveTo(0, y + 0.5);
+    ctx.lineTo(w, y + 0.5);
+    ctx.stroke();
+  }
 
-  log("Tile grid drawn ✅");
-
-} catch (err) {
-  console.error(err);
-  log("Error ❌ " + err.message);
-  ctx.fillStyle = "#ff6b6b";
-  ctx.font = "18px system-ui";
-  ctx.fillText("Boot error", 20, 90);
+  ctx.restore();
 }
+
+function loop() {
+  frame++;
+  drawBackground();
+  drawTestTile();
+  drawGrid(TILE_SIZE);
+
+  log("Tile drawn ✅  |  Loop running: " + frame);
+  requestAnimationFrame(loop);
+}
+
+try {
+  await import("./engine/core/loop.js").catch(() => {});
+  await import("./engine/map/tilesets.js").catch(() => {});
+  log("Engine modules loaded ✅");
+} catch (e) {
+  log("Engine load error ❌");
+  console.error(e);
+}
+
+loop();
 </script>
+
 </body>
 </html>
