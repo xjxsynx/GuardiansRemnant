@@ -1,107 +1,104 @@
+
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta charset="utf-8">
-<title>Guardians Remnant – Step 4C Animated Transitions</title>
+<meta charset="UTF-8">
+<title>Guardians Remnant – Step 5A</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-html,body{margin:0;background:#07131f;color:#9fdcff;font-family:system-ui}
-#ui{
- position:fixed;top:10px;left:10px;
+body { margin:0; background:#07131f; overflow:hidden; font-family:system-ui; }
+#ui {
+ position:fixed; top:10px; left:10px;
  background:rgba(0,0,0,.4);
- padding:10px;border-radius:8px;
- border:1px solid rgba(127,212,255,.35)
+ border:1px solid rgba(0,200,255,.35);
+ padding:10px; border-radius:10px; color:#9feaff;
 }
-canvas{display:block}
+button {
+ background:#0b2238; color:#9feaff;
+ border:1px solid rgba(0,200,255,.35);
+ padding:6px 10px; border-radius:8px;
+ margin-right:6px;
+}
+button.active { background:#155e75; }
+canvas { display:block; }
 </style>
 </head>
 <body>
 <div id="ui">
-<b>Step 4C</b>: Animated map transitions<br>
-Tap blue tile = portal
+<b>Step 5A: Entity Layer (Sprites)</b><br><br>
+<button id="terrainBtn">Terrain</button>
+<button id="entityBtn" class="active">Entities</button>
+<button id="eraseBtn">Eraser</button>
 </div>
 <canvas id="game"></canvas>
 
-<script>
-const canvas=document.getElementById('game');
-const ctx=canvas.getContext('2d');
-const TILE=32;
+<script type="module">
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+const DPR = window.devicePixelRatio || 1;
 
-let activeMap='Overworld';
-let transitioning=false;
-let fade=0;
-let fadeDir=0;
-let targetMap=null;
+let tileSize = 32;
+let gridW = 30, gridH = 20;
+let entities = [];
+let mode = "entity";
 
-const maps={
- Overworld:{
-  tiles:{'0,0':'g','1,0':'w'}
- },
- Dungeon:{
-  tiles:{'0,0':'s','1,0':'g'}
- }
-};
+const playerImg = new Image();
+playerImg.src = "assets/entities/player.png";
 
 function resize(){
- canvas.width=innerWidth;
- canvas.height=innerHeight;
+ canvas.width = innerWidth * DPR;
+ canvas.height = innerHeight * DPR;
+ canvas.style.width = innerWidth+"px";
+ canvas.style.height = innerHeight+"px";
+ ctx.setTransform(DPR,0,0,DPR,0,0);
 }
-addEventListener('resize',resize);
+window.addEventListener("resize", resize);
 resize();
 
-function drawMap(name){
- const m=maps[name];
- for(const k in m.tiles){
-  const [x,y]=k.split(',').map(Number);
-  ctx.fillStyle=
-    m.tiles[k]=='g'?'#4caf50':
-    m.tiles[k]=='w'?'#4aa3ff':
-    '#888';
-  ctx.fillRect(x*TILE,y*TILE,TILE,TILE);
+document.getElementById("terrainBtn").onclick=()=>mode="terrain";
+document.getElementById("entityBtn").onclick=()=>mode="entity";
+document.getElementById("eraseBtn").onclick=()=>mode="erase";
+
+canvas.addEventListener("pointerdown", e=>{
+ const x = Math.floor(e.offsetX / tileSize);
+ const y = Math.floor(e.offsetY / tileSize);
+ if(mode==="entity"){
+   entities.push({type:"player", x, y});
+ }
+ if(mode==="erase"){
+   entities = entities.filter(ent=>!(ent.x===x && ent.y===y));
+ }
+});
+
+function drawGrid(){
+ ctx.strokeStyle="rgba(0,200,255,.15)";
+ for(let x=0;x<gridW;x++){
+  ctx.beginPath();
+  ctx.moveTo(x*tileSize,0);
+  ctx.lineTo(x*tileSize,gridH*tileSize);
+  ctx.stroke();
+ }
+ for(let y=0;y<gridH;y++){
+  ctx.beginPath();
+  ctx.moveTo(0,y*tileSize);
+  ctx.lineTo(gridW*tileSize,y*tileSize);
+  ctx.stroke();
+ }
+}
+
+function drawEntities(){
+ for(const e of entities){
+  ctx.drawImage(playerImg, e.x*tileSize, e.y*tileSize, tileSize, tileSize);
  }
 }
 
 function loop(){
  ctx.clearRect(0,0,canvas.width,canvas.height);
-
- if(!transitioning){
-  drawMap(activeMap);
- } else {
-  drawMap(activeMap);
-  ctx.fillStyle=`rgba(0,0,0,${fade})`;
-  ctx.fillRect(0,0,canvas.width,canvas.height);
-
-  fade+=fadeDir;
-  if(fade>=1){
-    activeMap=targetMap;
-    fadeDir=-0.05;
-  }
-  if(fade<=0){
-    fade=0;
-    transitioning=false;
-  }
- }
-
+ drawGrid();
+ drawEntities();
  requestAnimationFrame(loop);
 }
 loop();
-
-canvas.addEventListener('click',e=>{
- const tx=Math.floor(e.offsetX/TILE);
- const ty=Math.floor(e.offsetY/TILE);
-
- if(transitioning) return;
-
- if(activeMap==='Overworld' && tx===1 && ty===0){
-   transitioning=true;
-   targetMap='Dungeon';
-   fadeDir=0.05;
- }
- else if(activeMap==='Dungeon'){
-   transitioning=true;
-   targetMap='Overworld';
-   fadeDir=0.05;
- }
-});
 </script>
 </body>
 </html>
