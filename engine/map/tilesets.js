@@ -6,17 +6,17 @@ export const Tilesets = {
   overworld: {
     tileSize: 32,
     // Update these paths to match your repo under assets/
-    image: "./assets/tiles/grassland.png",
+    image: "./engine/assets/tiles/grassland.png"
   },
 
   dungeon: {
     tileSize: 32,
-    image: "./assets/tiles/dungeon_stone.png",
+    image: "./engine/assets/tiles/dungeon_stone.png",
   },
 
   water: {
     tileSize: 32,
-    image: "./assets/tiles/water_animated.png",
+    image: "./engine/assets/tiles/water_animated.png",
     animated: true,
     frames: 4,
     speed: 20,
