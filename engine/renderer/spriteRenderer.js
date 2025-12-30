@@ -1,15 +1,19 @@
+import { SpriteStore } from "./spriteLoader.js";
 
-export function drawSprite(ctx, sprite, x, y, camera) {
-  if (!sprite || !sprite.image.complete) return;
+export function renderPlayer(ctx, player) {
+  const { x, y } = player.position;
+  const { direction, state, frame } = player.animator;
 
-  const drawX = Math.floor(x - sprite.width / 2 - camera.x);
-  const drawY = Math.floor(y - sprite.height - camera.y);
+  const key =
+    state === "idle"
+      ? `idle_${direction}`
+      : `walk_${direction}_${frame}`;
 
-  ctx.drawImage(
-    sprite.image,
-    drawX,
-    drawY,
-    sprite.width,
-    sprite.height
-  );
+  const sprite = SpriteStore[key];
+  if (!sprite) return;
+
+  const drawX = Math.floor(x);
+  const drawY = Math.floor(y - sprite.height); // ✅ bottom aligned
+
+  ctx.drawImage(sprite, drawX, drawY);
 }
