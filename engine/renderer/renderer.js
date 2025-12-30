@@ -11,5 +11,8 @@ export function renderPlayer(ctx, player) {
   const sprite = SpriteStore[key];
   if (!sprite) return;
 
-  ctx.drawImage(sprite, x, y);
+  const drawX = Math.floor(x - sprite.width / 2);
+  const drawY = Math.floor(y - sprite.height);
+
+  ctx.drawImage(sprite, drawX, drawY);
 }
