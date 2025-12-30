@@ -1,87 +1,99 @@
+// STEP 6E — Player Render Layer (Sprite-Style Placeholder)
+// Auto-loads Overworld_Start.grmap.json and draws tiles + player placeholder sprite (no movement yet).
 
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
+const DPR = window.devicePixelRatio || 1;
 
 const TILE = 32;
-const MAP = {
-  width: 20,
-  height: 12,
-  solid: new Set(["2,5","3,5","4,5","5,5","6,5","7,5"])
-};
-
-const camera = { x:0, y:0 };
+let map = null;
 
 const player = {
-  x:1, y:5,
-  px:1*TILE, py:5*TILE,
-  moving:false,
-  speed:6
+  gx: 0, gy: 0,
+  px: 0, py: 0,
+  sprite: new Image()
 };
+player.sprite.src = "./assets/player_placeholder.png";
 
-function isSolid(x,y){
-  return MAP.solid.has(`${x},${y}`);
+function resize(){
+  canvas.width = innerWidth * DPR;
+  canvas.height = innerHeight * DPR;
+  canvas.style.width = innerWidth + "px";
+  canvas.style.height = innerHeight + "px";
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+}
+addEventListener("resize", resize);
+resize();
+
+async function loadMap(){
+  const res = await fetch("./Overworld_Start.grmap.json");
+  map = await res.json();
+
+  const keys = Object.keys(map.tiles || {});
+  let gx = 0, gy = 0;
+  if(keys.length){
+    keys.sort((a,b)=>{
+      const [ax,ay]=a.split(",").map(Number);
+      const [bx,by]=b.split(",").map(Number);
+      return (ay-by) || (ax-bx);
+    });
+    [gx,gy] = keys[0].split(",").map(Number);
+  }
+  player.gx = gx; player.gy = gy;
+  player.px = gx * TILE; player.py = gy * TILE;
 }
 
-function tryMove(dx,dy){
-  if(player.moving) return;
-  const nx = player.x + dx;
-  const ny = player.y + dy;
-  if(nx<0||ny<0||nx>=MAP.width||ny>=MAP.height) return;
-  if(isSolid(nx,ny)) return;
-  player.x = nx; player.y = ny;
-  player.moving = true;
+function tileColor(id){
+  if(id === 1) return "#2f8f49";
+  if(id === 4) return "#2f6fbf";
+  return "#6b6f77";
 }
 
-window.addEventListener("keydown",e=>{
-  if(e.key==="ArrowUp"||e.key==="w") tryMove(0,-1);
-  if(e.key==="ArrowDown"||e.key==="s") tryMove(0,1);
-  if(e.key==="ArrowLeft"||e.key==="a") tryMove(-1,0);
-  if(e.key==="ArrowRight"||e.key==="d") tryMove(1,0);
-});
-
-canvas.addEventListener("touchstart",e=>{
-  const t = e.touches[0];
-  const cx = canvas.width/2;
-  const cy = canvas.height/2;
-  const dx = t.clientX - cx;
-  const dy = t.clientY - cy;
-  if(Math.abs(dx)>Math.abs(dy)){
-    tryMove(dx>0?1:-1,0);
-  }else{
-    tryMove(0,dy>0?1:-1);
+function drawTiles(){
+  if(!map) return;
+  for(const k in map.tiles){
+    const [gx,gy] = k.split(",").map(Number);
+    const id = map.tiles[k];
+    ctx.fillStyle = tileColor(id);
+    ctx.fillRect(gx*TILE, gy*TILE, TILE, TILE);
   }
-});
-
-function update(){
-  const tx = player.x*TILE;
-  const ty = player.y*TILE;
-  player.px += (tx-player.px)/player.speed;
-  player.py += (ty-player.py)/player.speed;
-  if(Math.abs(player.px-tx)<1 && Math.abs(player.py-ty)<1){
-    player.px=tx; player.py=ty; player.moving=false;
-  }
-  camera.x = Math.max(0, player.px - canvas.width/2 + TILE/2);
-  camera.y = Math.max(0, player.py - canvas.height/2 + TILE/2);
 }
 
-function draw(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.strokeStyle="#123";
-  for(let x=0;x<MAP.width;x++){
-    for(let y=0;y<MAP.height;y++){
-      ctx.strokeRect(x*TILE-camera.x,y*TILE-camera.y,TILE,TILE);
-    }
+function drawGrid(){
+  if(!map) return;
+  const w = (map.width || 20) * TILE;
+  const h = (map.height || 12) * TILE;
+  ctx.strokeStyle = "rgba(127,212,255,.18)";
+  for(let x=0;x<=w;x+=TILE){
+    ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,h); ctx.stroke();
   }
-  ctx.fillStyle="#2a7";
-  MAP.solid.forEach(p=>{
-    const [x,y]=p.split(",").map(Number);
-    ctx.fillRect(x*TILE-camera.x,y*TILE-camera.y,TILE,TILE);
-  });
-  ctx.fillStyle="#4f8";
-  ctx.fillRect(player.px-camera.x,player.py-camera.y,TILE,TILE);
+  for(let y=0;y<=h;y+=TILE){
+    ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke();
+  }
+}
+
+function drawPlayer(){
+  ctx.drawImage(player.sprite, player.px, player.py, TILE, TILE);
 }
 
 function loop(){
-  update(); draw(); requestAnimationFrame(loop);
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  if(map){
+    const mapW = (map.width || 20) * TILE;
+    const mapH = (map.height || 12) * TILE;
+    const offsetX = Math.max(0, Math.floor((innerWidth - mapW) / 2));
+    const offsetY = Math.max(0, Math.floor((innerHeight - mapH) / 2));
+    ctx.save();
+    ctx.translate(offsetX, offsetY);
+    drawTiles();
+    drawPlayer();
+    drawGrid();
+    ctx.restore();
+  }
+
+  requestAnimationFrame(loop);
 }
+
+await loadMap();
 loop();
