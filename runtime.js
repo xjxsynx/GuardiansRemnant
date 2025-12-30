@@ -1,25 +1,43 @@
+// STEP 6I – Live Player Sprite + Directional Walk Animation
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-const TILE = 32;
-let frame = 0;
-let dir = "down";
-
-const colors = {
-  down: "#4ade80",
-  up: "#60a5fa",
-  left: "#facc15",
-  right: "#f472b6"
+const tileSize = 32;
+let player = {
+  x: 5, y: 4,
+  dir: "down",
+  frame: 0,
+  tick: 0
 };
 
-function draw(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.fillStyle = colors[dir];
-  ctx.fillRect(144,104,32,32);
-  frame++;
-  if(frame%60===0){
-    dir = ["down","left","up","right"][(frame/60)%4|0];
+const keys = {};
+window.addEventListener("keydown", e => keys[e.key] = true);
+window.addEventListener("keyup", e => keys[e.key] = false);
+
+function update() {
+  let moving = false;
+  if (keys["ArrowUp"]) { player.y--; player.dir="up"; moving=true; }
+  if (keys["ArrowDown"]) { player.y++; player.dir="down"; moving=true; }
+  if (keys["ArrowLeft"]) { player.x--; player.dir="left"; moving=true; }
+  if (keys["ArrowRight"]) { player.x++; player.dir="right"; moving=true; }
+
+  if (moving) {
+    player.tick++;
+    if (player.tick % 10 === 0) player.frame = (player.frame+1)%4;
+  } else {
+    player.frame = 0;
   }
-  requestAnimationFrame(draw);
 }
-draw();
+
+function draw() {
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle="#2ecc71";
+  ctx.fillRect(player.x*tileSize, player.y*tileSize, tileSize, tileSize);
+}
+
+function loop() {
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+loop();

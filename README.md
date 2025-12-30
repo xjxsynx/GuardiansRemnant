@@ -1,7 +1,9 @@
-STEP 6F — Directional Player Sprites
+STEP 6I – Live Player Sprite + Directional Animation
 
-• Player has facing direction (N/S/E/W)
-• Render color changes based on direction
-• Final hook point for real sprite sheets
+This build binds:
+- Player movement
+- Direction tracking
+- Walk animation state
+- Runtime render loop
 
-Next: Step 6G = walking animation frames
+Sprites are placeholder blocks.
