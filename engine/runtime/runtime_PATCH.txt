@@ -1,0 +1,6 @@
+
+// ADD THESE IMPORTS
+import { renderPlayer } from "../core/playerRender.js";
+
+// INSIDE GAME LOOP (replace old render logic)
+renderPlayer(ctx, player, camera);
