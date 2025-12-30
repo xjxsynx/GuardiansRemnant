@@ -1,5 +1,6 @@
 import { Player } from "./player.js";
 import { Camera } from "./roomCamera.js";
+import { initSprites } from "./initSprites.js";
 
 export function startRuntime(){
   const canvas=document.getElementById("game");
