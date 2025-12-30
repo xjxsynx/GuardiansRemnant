@@ -1,6 +1,6 @@
-import { Player } from "../player.js";
-import { Camera } from "../roomCamera.js";
-import { initSprites, renderPlayer } from "../renderer.js";
+import { Player } from "./player.js";
+import { Camera } from "./roomCamera.js";
+import { initSprites } from "./initSprites.js";
 
 export function startRuntime() {
   const canvas = document.getElementById("game");
@@ -16,6 +16,7 @@ export function startRuntime() {
   window.addEventListener("resize", resize);
   resize();
 
+  // ✅ load sprites ONCE
   initSprites();
 
   const player = new Player(160, 160);
@@ -29,7 +30,7 @@ export function startRuntime() {
 
     ctx.save();
     ctx.translate(-camera.x, -camera.y);
-    renderPlayer(ctx, player);
+    player.draw(ctx);
     ctx.restore();
 
     requestAnimationFrame(loop);
