@@ -23,17 +23,14 @@ initSprites();
   const camera=new Camera(320,240);
 
   function loop(){
-    ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.clearRect(0,0,canvas.width,canvas.height);
 
-    player.update();
-    camera.follow(player);
+  player.update();
+  camera.follow(player);
 
-    ctx.save();
-    ctx.translate(-camera.x,-camera.y);
-    renderPlayer(ctx, player, camera);
-    ctx.restore();
+  renderPlayer(ctx, player, camera);
 
-    requestAnimationFrame(loop);
-  }
+  requestAnimationFrame(loop);
+}
   loop();
 }
