@@ -1,36 +1,39 @@
-import { renderPlayer } from "./renderer/spriteRenderer.js";
-import { Player } from "./player.js";
-import { Camera } from "./roomCamera.js";
-import { initSprites } from "./initSprites.js";
+import { Player } from "../player.js";
+import { Camera } from "../roomCamera.js";
+import { initSprites, renderPlayer } from "../renderer.js";
 
-export function startRuntime(){
-  const canvas=document.getElementById("game");
-  const ctx=canvas.getContext("2d");
-  const DPR=window.devicePixelRatio||1;
+export function startRuntime() {
+  const canvas = document.getElementById("game");
+  const ctx = canvas.getContext("2d");
+  const DPR = window.devicePixelRatio || 1;
 
-  function resize(){
-    canvas.width=innerWidth*DPR;
-    canvas.height=innerHeight*DPR;
-    ctx.setTransform(DPR,0,0,DPR,0,0);
+  function resize() {
+    canvas.width = innerWidth * DPR;
+    canvas.height = innerHeight * DPR;
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
   }
-  window.addEventListener("resize",resize);
+
+  window.addEventListener("resize", resize);
   resize();
 
-// ✅ initialize sprite system
-initSprites();
+  initSprites();
 
-  const player=new Player(160,160);
-  const camera=new Camera(320,240);
+  const player = new Player(160, 160);
+  const camera = new Camera(320, 240);
 
-  function loop(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
+  function loop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  player.update();
-  camera.follow(player);
+    player.update();
+    camera.follow(player);
 
-  renderPlayer(ctx, player, camera);
+    ctx.save();
+    ctx.translate(-camera.x, -camera.y);
+    renderPlayer(ctx, player);
+    ctx.restore();
 
-  requestAnimationFrame(loop);
-}
+    requestAnimationFrame(loop);
+  }
+
   loop();
 }
