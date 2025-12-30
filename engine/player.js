@@ -1,43 +1,22 @@
+import { PlayerAnimator } from "./playerAnimator.js";
+import { renderPlayer } from "../renderer/spriteRenderer.js";
+
 export class Player {
   constructor(x, y) {
-    this.x = x;
-    this.y = y;
+    this.position = { x, y };
+    this.width = 32;
+    this.height = 32;
 
-    this.vx = 0;
-    this.vy = 0;
-
-    this.speed = 2;
-    this.direction = "south";
-    this.state = "idle";
+    this.animator = new PlayerAnimator();
   }
 
   update() {
-    this.vx = 0;
-    this.vy = 0;
+    this.animator.update();
+  }
 
-    if (window.input?.left)  {
-      this.vx = -this.speed;
-      this.direction = "west";
-    }
-
-    if (window.input?.right) {
-      this.vx = this.speed;
-      this.direction = "east";
-    }
-
-    if (window.input?.up) {
-      this.vy = -this.speed;
-      this.direction = "north";
-    }
-
-    if (window.input?.down) {
-      this.vy = this.speed;
-      this.direction = "south";
-    }
-
-    this.state = (this.vx || this.vy) ? "walk" : "idle";
-
-    this.x += this.vx;
-    this.y += this.vy;
+  draw(ctx) {
+    // 🚫 NO canvas drawing here
+    // ✅ ALL rendering delegated to sprite system
+    renderPlayer(ctx, this);
   }
 }
