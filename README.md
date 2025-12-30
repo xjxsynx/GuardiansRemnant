@@ -1,13 +1,7 @@
+STEP 6F — Directional Player Sprites
 
-SEA OF STARS – CREATOR ENGINE (POLISHED BUILD)
+• Player has facing direction (N/S/E/W)
+• Render color changes based on direction
+• Final hook point for real sprite sheets
 
-POLISH PASS INCLUDED:
-✔ Performance-stable game loop
-✔ Asset preloading
-✔ Unified UI theme
-✔ Smooth screen fades
-✔ Settings & accessibility hooks
-✔ Optional haptics
-✔ Clean editor chrome
-
-This is the final presentation-ready build.
+Next: Step 6G = walking animation frames
