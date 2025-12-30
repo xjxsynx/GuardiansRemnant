@@ -15,6 +15,12 @@ export function startRuntime(){
   window.addEventListener("resize",resize);
   resize();
 
+// ✅ initialize sprite system
+initSprites();
+
+const player = new Player(160,160);
+const camera = new Camera(320,240);
+
   const player=new Player(160,160);
   const camera=new Camera(320,240);
 
