@@ -1,3 +1,4 @@
+import { renderPlayer } from "./renderer/spriteRenderer.js";
 import { Player } from "./player.js";
 import { Camera } from "./roomCamera.js";
 import { initSprites } from "./initSprites.js";
@@ -17,9 +18,6 @@ export function startRuntime(){
 
 // ✅ initialize sprite system
 initSprites();
-
-const player = new Player(160,160);
-const camera = new Camera(320,240);
 
   const player=new Player(160,160);
   const camera=new Camera(320,240);
