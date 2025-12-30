@@ -30,7 +30,7 @@ initSprites();
 
     ctx.save();
     ctx.translate(-camera.x,-camera.y);
-    player.draw(ctx);
+    renderPlayer(ctx, player, camera);
     ctx.restore();
 
     requestAnimationFrame(loop);
