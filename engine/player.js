@@ -2,8 +2,10 @@ export class Player {
   constructor(x, y) {
     this.x = x;
     this.y = y;
+
     this.vx = 0;
     this.vy = 0;
+
     this.speed = 2;
     this.direction = "south";
     this.state = "idle";
@@ -13,10 +15,25 @@ export class Player {
     this.vx = 0;
     this.vy = 0;
 
-    if (window.input?.left)  { this.vx = -this.speed; this.direction = "west"; }
-    if (window.input?.right) { this.vx =  this.speed; this.direction = "east"; }
-    if (window.input?.up)    { this.vy = -this.speed; this.direction = "north"; }
-    if (window.input?.down)  { this.vy =  this.speed; this.direction = "south"; }
+    if (window.input?.left)  {
+      this.vx = -this.speed;
+      this.direction = "west";
+    }
+
+    if (window.input?.right) {
+      this.vx = this.speed;
+      this.direction = "east";
+    }
+
+    if (window.input?.up) {
+      this.vy = -this.speed;
+      this.direction = "north";
+    }
+
+    if (window.input?.down) {
+      this.vy = this.speed;
+      this.direction = "south";
+    }
 
     this.state = (this.vx || this.vy) ? "walk" : "idle";
 
