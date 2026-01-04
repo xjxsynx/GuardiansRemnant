@@ -1,3 +1,7 @@
+import { CollisionGrid } from "../map/collisionGrid.js";
+import { resolveCollision } from "../map/collisionResolver.js";
+
+
 import { Player } from "./player.js";
 import { Camera } from "./roomCamera.js";
 import { initSprites } from "./initSprites.js";
