@@ -4,6 +4,19 @@ import { resolveCollision } from "../map/collisionResolver.js";
 
 import { Player } from "./player.js";
 import { Camera } from "./roomCamera.js";
+// TEMP collision grid for testing
+const TILE_SIZE = 32;
+const collisionGrid = new CollisionGrid(20, 15, TILE_SIZE);
+
+// Example: create a wall
+for (let x = 0; x < 20; x++) {
+  collisionGrid.setSolid(x, 0, true);        // top wall
+  collisionGrid.setSolid(x, 14, true);       // bottom wall
+}
+for (let y = 0; y < 15; y++) {
+  collisionGrid.setSolid(0, y, true);        // left wall
+  collisionGrid.setSolid(19, y, true);       // right wall
+}
 import { initSprites } from "./initSprites.js";
 
 export function startRuntime() {
@@ -30,7 +43,8 @@ export function startRuntime() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     player.update();
-    camera.follow(player);
+resolveCollision(player, collisionGrid);
+camera.follow(player);
 
     ctx.save();
     ctx.translate(-camera.x, -camera.y);
